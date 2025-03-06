@@ -32,10 +32,10 @@ class AuthRepository:
     def register(self, email: str, password: str, user_id: str):
         self.users[email] = Hash(user_id=user_id, password=password)
             
-    def authenticate(self, email: str, hash: str) -> Optional[str]:
+    def authenticate(self, email: str, password: str) -> Optional[str]:
         if email not in self.users:
             raise UserNotFoundException(email)
-        if self.users[email].compare(hash):
+        if self.users[email].compare(password):
             return self.users[email].user_id
         else:
             raise WrongCredentialException(email)
