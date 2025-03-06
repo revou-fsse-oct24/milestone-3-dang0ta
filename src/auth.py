@@ -1,7 +1,7 @@
 import bcrypt
 from typing import Optional
 
-class UserHash:
+class Hash:
     def __init__(self, user_id:str, password:str):
         self.user_id = user_id
         self.hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
@@ -30,7 +30,7 @@ class AuthRepository:
         self.users = {}
     
     def register(self, email: str, password: str, user_id: str):
-        self.users[email] = UserHash(user_id=user_id, password=password)
+        self.users[email] = Hash(user_id=user_id, password=password)
             
     def authenticate(self, email: str, hash: str) -> Optional[str]:
         if email not in self.users:
