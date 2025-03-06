@@ -31,6 +31,8 @@ def create_app(users: UserRepository, auth: AuthRepository):
             email = data.get("email")
             password = data.get("password")
             user_id = auth.authenticate(email, password)
+            if user_id == None:
+                raise UserNotFoundException(email)
             access_token = create_access_token(identity=user_id)
             return access_token, 200
         except ValidationError as e:
