@@ -39,6 +39,6 @@ def decode_token(token: str) -> Dict:
     
 def is_valid_token(token: str):
     payload = decode_token(token=token)
-    if 'error' in payload:
-        return False, payload['error']
+    if "error" in payload:
+        return False, payload["error"]
     return True, payload
