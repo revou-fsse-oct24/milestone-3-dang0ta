@@ -56,9 +56,13 @@
 							"pm.test(\"Successful POST request\", function () {",
 							"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
 							"});",
-							""
+							"",
+							"if (pm.response.status == \"OK\") {",
+							"    pm.environment.set(\"userID\", pm.response.text())",
+							"}"
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
@@ -67,7 +71,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"name\": \"Add your name in the body\"\n}",
+					"raw": "{\n\t\"email\": \"foo@bar.com\",\n    \"name\": \"foo\",\n    \"password\": \"foobarqux\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -75,12 +79,12 @@
 					}
 				},
 				"url": {
-					"raw": "{{base_url}}/info",
+					"raw": "{{base_url}}/users",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
-						"info"
+						"users"
 					]
 				},
 				"description": "This is a POST request, submitting data to an API via the request body. This request submits JSON data, and the data is reflected in the response.\n\nA successful POST request typically returns a `200 OK` or `201 Created` response code."
@@ -98,9 +102,10 @@
 							"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
 							"});",
 							"",
-							"",
-							"var res = pm.response.json()",
-							"pm.environment.set(\"bearerToken\", res.accessToken)"
+							"if (pm.response.status == \"OK\") {",
+							"    var res = pm.response.json()",
+							"    pm.environment.set(\"bearerToken\", res.access_token)",
+							"}"
 						],
 						"type": "text/javascript",
 						"packages": {}
@@ -136,8 +141,178 @@
 		{
 			"name": "update current user",
 			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{bearerToken}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"foo@bar.com\",\n    \"name\": \"updated me\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/users/me",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"users",
+						"me"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get account list",
+			"request": {
 				"method": "GET",
-				"header": []
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{bearerToken}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/accounts",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"accounts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create new account",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{bearerToken}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"user_id\": \"d5693d78-c28b-44a7-a7ff-a95eaa5c65cd\",\n    \"balance\": 100\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/accounts",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"accounts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get an account",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{bearerToken}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/accounts/22776184-4d35-4496-9f9a-4bb353737075",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"accounts",
+						"22776184-4d35-4496-9f9a-4bb353737075"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "update an account",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{bearerToken}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"user_id\": \"d5693d78-c28b-44a7-a7ff-a95eaa5c65cd\",\n    \"balance\": 200\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/accounts/22776184-4d35-4496-9f9a-4bb353737075",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"accounts",
+						"22776184-4d35-4496-9f9a-4bb353737075"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "delete an account",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{bearerToken}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"user_id\": \"d5693d78-c28b-44a7-a7ff-a95eaa5c65cd\",\n    \"balance\": 200\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/accounts/22776184-4d35-4496-9f9a-4bb353737075",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"accounts",
+						"22776184-4d35-4496-9f9a-4bb353737075"
+					]
+				}
 			},
 			"response": []
 		}
