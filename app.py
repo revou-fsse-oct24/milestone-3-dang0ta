@@ -1,16 +1,17 @@
 from flask import Flask, request
 from werkzeug import exceptions
 
-from db import UserRepository
+from db import UserRepository, AccountRepository
 from app_config import AppConfig
-from routes import auth_bp, user_bp
+from routes import auth_bp, user_bp, accounts_bp
 from auth import AuthRepository
 
-def create_app(users: UserRepository, auth: AuthRepository):
+def create_app(users: UserRepository, auth: AuthRepository, accounts: AccountRepository):
     app = Flask(__name__)
     app.config.from_object(AppConfig())
     app.register_blueprint(auth_bp(auth))
     app.register_blueprint(user_bp(users, auth))
+    app.register_blueprint(accounts_bp(accounts))
 
     @app.errorhandler(exceptions.NotFound)
     def handle_notfound(e):

@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from typing import TypeVar, Generic, Dict, Optional, Callable, List
+from typing import TypeVar, Generic, Dict, Optional, Callable, List, Set
 
 T = TypeVar('T')
 
@@ -49,3 +49,11 @@ class UserRepository(Repository[Dict]):
             if user['email'] == email:
                 return user
         return None
+    
+class AccountRepository(Repository[Dict]):
+    def find_by_user_id(self, user_id: str) -> Set[Dict]:
+        accounts = list()
+        for account in self.collection.values():
+            if account["user_id"] == user_id:
+                accounts.append(account)
+        return accounts

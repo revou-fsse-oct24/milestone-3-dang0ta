@@ -20,7 +20,7 @@ def get_jwt_identity() -> Optional[str]:
 
 
 def jwt_required(f):
-    def decorator(*args):
+    def decorator(*args, **kwargs):
         token = _get_token()
         if token == None:
             return "Unauthorized", 401
@@ -28,11 +28,13 @@ def jwt_required(f):
         if is_blacklisted(token):
             return "Unauthorized", 401
         
-        is_valid, _ = is_valid_token(token)
+        is_valid, payload = is_valid_token(token)
         if not is_valid:
-            return "Unauthorized", 401
+            return str(payload), 401
         
-        return f()
+        return f(*args, **kwargs)
+    
+    decorator.__name__ = f.__name__
     return decorator
 
 def _get_token()-> Optional[str]:
