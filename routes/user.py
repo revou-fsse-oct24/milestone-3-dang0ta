@@ -1,8 +1,9 @@
 from flask import Blueprint, request, jsonify
 from pydantic import ValidationError
+from typing import Dict
 
 from db import UserRepository
-from models import User
+from models import UserCredential, UserInformation
 from auth_jwt import jwt_required, get_jwt_identity
 from auth import AuthRepository
 
@@ -12,7 +13,7 @@ def user_bp(users: UserRepository, auth: AuthRepository)-> Blueprint:
     @bp.route("/", methods=["POST"])
     def create_user():
         try:
-            user = User(**request.get_json())
+            user = UserCredential(**request.get_json())
             dict = users.create(data = user.model_dump())
             
             auth.register(email=user.email, password=user.password, user_id=dict["id"])
@@ -20,22 +21,39 @@ def user_bp(users: UserRepository, auth: AuthRepository)-> Blueprint:
             return dict["id"], 201
         except ValidationError as e:
             return e.errors(), 400
-        except Exception as e:
-            return str(e), 500
         
-    @bp.route("/me", methods=["GET"])
+    @bp.route("/me", methods=["GET", "PUT"])
     @jwt_required
-    def get_current_user():
-        try:
-            current_user = get_jwt_identity()
-            print(current_user)
-            user_dict = users.find_by_id(current_user)
-            if user_dict == None:
-                return "user not found", 404
-
-            user_dict.pop("password")
-            return jsonify(user_dict), 200
-        except Exception as e:
-            return str(e), 500
-        
+    def handle_me():
+        match request.method:
+            case "GET":
+                return handle_get_me(users)
+            case "PUT":
+                return handle_update_me(users)
+            case _:
+                return "Method not allowed", 405
+            
     return bp
+
+def handle_get_me(users: UserRepository):
+    current_user = get_jwt_identity()
+    user_dict = users.find_by_id(current_user)
+    if user_dict == None:
+        return "user not found", 404
+
+    return jsonify(user_dict), 200
+
+def handle_update_me(users: UserRepository):
+    try:
+        current_user = get_jwt_identity()
+        current_me = users.find_by_id(current_user)
+        if current_me == None:
+            return "user not found", 404
+        
+        updated_me = UserInformation(**request.get_json()).model_dump()
+        current_me.update(updated_me)
+        print(f"updated_me: {updated_me}, current_me: {current_me}")
+        updated_dict = users.update(id=current_user, data=current_me)
+        return jsonify(updated_dict), 200
+    except ValidationError as e:
+        return e.errors(), 400

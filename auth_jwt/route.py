@@ -22,7 +22,8 @@ def get_jwt_identity() -> Optional[str]:
 
 
 def jwt_required(f):
-    def decorator():
+    def decorator(*args):
+        print(args)
         token = _get_token()
         if token == None:
             return "Unauthorized", 401
