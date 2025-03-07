@@ -6,3 +6,8 @@ class UserInformation(BaseModel):
 
 class UserCredential(UserInformation):    
     password: str
+
+class Account(BaseModel):
+    user_id: str
+    balance: int
+
