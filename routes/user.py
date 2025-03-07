@@ -52,7 +52,6 @@ def handle_update_me(users: UserRepository):
         
         updated_me = UserInformation(**request.get_json()).model_dump()
         current_me.update(updated_me)
-        print(f"updated_me: {updated_me}, current_me: {current_me}")
         updated_dict = users.update(id=current_user, data=current_me)
         return jsonify(updated_dict), 200
     except ValidationError as e:

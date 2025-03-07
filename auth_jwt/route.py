@@ -6,12 +6,10 @@ from typing import Optional
 
 def get_jwt_identity() -> Optional[str]:
     token = _get_token()
-    print(token)
     if not token:
         return None
     
     is_valid, payload = is_valid_token(token)
-    print(is_valid, payload)
     if not is_valid:
         return None
     
@@ -23,7 +21,6 @@ def get_jwt_identity() -> Optional[str]:
 
 def jwt_required(f):
     def decorator(*args):
-        print(args)
         token = _get_token()
         if token == None:
             return "Unauthorized", 401
