@@ -1,7 +1,9 @@
 import os
-from src.app import create_app
-from src.db import UserRepository
-app = create_app(users=UserRepository({}))
+from app import create_app
+from db import UserRepository
+from auth import AuthRepository
+
+app = create_app(users=UserRepository({}), auth=AuthRepository())
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))

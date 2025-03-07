@@ -1,5 +1,5 @@
 import pytest
-from src.db import Repository
+from db import Repository
 
 @pytest.fixture
 def sample_collection():

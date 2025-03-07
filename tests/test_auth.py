@@ -1,5 +1,5 @@
 import pytest
-from src.auth import AuthRepository, WrongCredentialException, UserNotFoundException
+from auth import AuthRepository, WrongCredentialException, UserNotFoundException
 
 def test_authenticate():
     auth  = AuthRepository()
