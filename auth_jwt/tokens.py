@@ -33,7 +33,7 @@ def decode_token(token: str) -> Dict:
         payload = decode(token, current_app.config['JWT_SECRET'], algorithms='HS256')
         return payload
     except ExpiredSignatureError:
-        return {'error', 'Token Expired'}
+        return {'error': 'Token Expired'}
     except InvalidTokenError:
         return {'error': 'Invalid Token'}
     
@@ -41,4 +41,4 @@ def is_valid_token(token: str):
     payload = decode_token(token=token)
     if "error" in payload:
         return False, payload["error"]
-    return True, payload
+    return True, payload    

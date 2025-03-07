@@ -20,6 +20,7 @@ def get_jwt_identity() -> Optional[str]:
 
 
 def jwt_required(f):
+    @wraps(f)
     def decorator(*args, **kwargs):
         token = _get_token()
         if token == None:
@@ -33,8 +34,6 @@ def jwt_required(f):
             return str(payload), 401
         
         return f(*args, **kwargs)
-    
-    decorator.__name__ = f.__name__
     return decorator
 
 def _get_token()-> Optional[str]:
