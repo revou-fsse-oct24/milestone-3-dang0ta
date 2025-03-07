@@ -13,3 +13,6 @@ wheels/
 .pytest_cache
 htmlcov
 .DS_STORE
+.env
+.vscode
+.coverage
