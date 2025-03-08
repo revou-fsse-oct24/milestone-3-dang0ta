@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify
 from pydantic import ValidationError
-from typing import Dict
 
 from db import UserRepository
 from models import UserCredential, UserInformation
