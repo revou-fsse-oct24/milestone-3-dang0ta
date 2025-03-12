@@ -61,9 +61,12 @@ curl -X POST http://localhost:5000/users \
 ```
 
 
-## Testing
+## Testing and Code Coverage
 
-To run tests (with code coverage):
+To run tests (with code coverage, current coverage is around 93%):
 ```bash
-uv run pytest --cov=src --cov-report=term
+uv run pytest --cov=.
 ```
+
+latest coverage: taken at Wednesday, March 12, 2025:
+![coverage](docs/latest_coverage.png)

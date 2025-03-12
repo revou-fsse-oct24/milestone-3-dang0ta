@@ -8,21 +8,6 @@ class Hash:
 
     def compare(self, password: str) -> bool:
         return bcrypt.checkpw(password=password.encode(), hashed_password=self.hash)
-    
-
-class UserNotFoundException(Exception):
-    # keep the email for logging
-    email: str
-    def __init__(self, email: str):
-        super().__init__("the given user credential is not found")
-        self.email = email
-
-class WrongCredentialException(Exception):
-    # keep the email for logging
-    email: str
-    def __init__(self, email):
-        super().__init__("incorrect email/password")
-        self.email = email
 
 class AuthRepository:
     def __init__(self, *, users: dict = None):
@@ -40,3 +25,17 @@ class AuthRepository:
             return self.users[email].user_id
         else:
             raise WrongCredentialException(email)
+
+class UserNotFoundException(Exception):
+    # keep the email for logging
+    email: str
+    def __init__(self, email: str):
+        super().__init__("the given user credential is not found")
+        self.email = email
+
+class WrongCredentialException(Exception):
+    # keep the email for logging
+    email: str
+    def __init__(self, email):
+        super().__init__("incorrect email/password")
+        self.email = email
