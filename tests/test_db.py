@@ -243,6 +243,7 @@ def test_account_repo_find_by_user_id(account_repo):
     results = account_repo.find_by_user_id("3")
     assert len(results) == 0
 
+# TODO: re-enable this test
 # def test_date_range():
 #     """Test DateRange is_in_range method."""
 #     now = datetime.now()

@@ -50,6 +50,7 @@ def create_transaction(transactions: TransactionRepository):
             return "Unauthorized",401
         
         transaction_request = NewTransactionRequest(**request.get_json())
-        transactions.create(transaction_request.create_transaction(user_id=current_user))
+        created_transaction = transactions.create(transaction_request.create_transaction(user_id=current_user))
+        return jsonify({"transaction": created_transaction}), 201
     except ValidationError as e:
         return e.errors(), 400
