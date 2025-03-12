@@ -19,6 +19,17 @@ def user_bp(users: UserRepository, auth: AuthRepository)-> Blueprint:
             
             return jsonify({"id": dict["id"]}), 201
         except ValidationError as e:
+            errors = e.errors()
+            for error in errors:
+                if error['loc'][0] == 'name' and error['msg'] == 'Field required':
+                    return jsonify({"error": "missing user name"}), 400
+                if error['loc'][0] == 'email' and error['msg'] == 'Field required':
+                    return jsonify({"error": "missing email"}), 400
+                if error['loc'][0] == 'email':
+                    return jsonify({"error": "invalid email"}), 400
+                if error['loc'][0] == 'password' and error['msg'] == 'Field required':
+                    return jsonify({"error": "missing password"}), 400
+
             return e.errors(), 400
         
     @bp.route("/me", methods=["GET", "PUT"])
