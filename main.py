@@ -7,4 +7,5 @@ app = create_app(users=UserRepository({}), auth=AuthRepository(), accounts=Accou
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    debug_mode = os.getenv('DEBUG', 'False').lower() in ['true', '1', 't']
+    app.run(host='0.0.0.0', port=port, debug=debug_mode)

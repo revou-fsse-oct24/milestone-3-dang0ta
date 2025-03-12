@@ -17,7 +17,7 @@ def user_bp(users: UserRepository, auth: AuthRepository)-> Blueprint:
             
             auth.register(email=user.email, password=user.password, user_id=dict["id"])
             
-            return dict["id"], 201
+            return jsonify({"id": dict["id"]}), 201
         except ValidationError as e:
             return e.errors(), 400
         
