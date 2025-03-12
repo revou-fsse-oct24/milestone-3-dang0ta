@@ -57,7 +57,7 @@ def test_getting_authenticated_current_user_success(app_with_test_user, test_use
     assert response_data["name"] == test_user.name
     assert response_data["email"] == test_user.email
 
-def test_update_current_user(app_with_test_user, test_user, client: Client):
+def test_update_current_user(app_with_test_user, client: Client):
     client = app_with_test_user.test_client()
     
     # Save to database within app context
