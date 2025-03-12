@@ -1,8 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 
 class UserInformation(BaseModel):
-    name: str
-    email: str
+    name: str = Field(..., description="The name of the user")
+    email: EmailStr = Field(..., description="The email address of the user")
 
 class UserCredential(UserInformation):    
     password: str
@@ -10,8 +10,6 @@ class UserCredential(UserInformation):
 class Account(BaseModel):
     user_id: str
     balance: int
-
-
 
 class Transaction(BaseModel):
     user_id: str

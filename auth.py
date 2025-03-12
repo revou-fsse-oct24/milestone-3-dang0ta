@@ -25,7 +25,6 @@ class WrongCredentialException(Exception):
         self.email = email
 
 class AuthRepository:
-    use_bcrypt: bool
     def __init__(self):
         self.users = {}
     
