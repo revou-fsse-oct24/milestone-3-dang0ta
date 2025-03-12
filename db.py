@@ -42,7 +42,15 @@ class Repository(Generic[T]):
         return data
 
     def find_by_id(self, id: str) -> Optional[T]:
-        return self.collection.get(id)
+        if id not in self.collection:
+            return None
+        
+        found = self.collection.get(id)
+        # Remove keys that are in self._protected_fields
+        for key in self._protected_fields:
+            if key in found:
+                del found[key]
+        return found
     
     def find(self, filter_func: Optional[Callable[[T], bool]] = None) -> Optional[T]:
         if not filter_func:

@@ -66,3 +66,5 @@ def handle_update_me(users: UserRepository):
         return jsonify(updated_dict), 200
     except ValidationError as e:
         return e.errors(), 400
+    except ValueError as e:
+        return str(e), 400

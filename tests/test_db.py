@@ -52,7 +52,6 @@ def test_find_by_id_existing(repo):
     result = repo.find_by_id("1")
     
     assert result is not None
-    assert result["id"] == "1"
     assert result["name"] == "Test Item 1"
 
 def test_find_by_id_non_existing(repo):
