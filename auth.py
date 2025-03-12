@@ -25,13 +25,15 @@ class WrongCredentialException(Exception):
         self.email = email
 
 class AuthRepository:
-    def __init__(self):
-        self.users = {}
+    def __init__(self, *, users: dict = None):
+        self.users = users or {}
     
     def register(self, email: str, password: str, user_id: str):
         self.users[email] = Hash(user_id=user_id, password=password)
             
     def authenticate(self, email: str, password: str) -> Optional[str]:
+        if email is None or password is None:
+            raise WrongCredentialException(email)
         if email not in self.users:
             raise UserNotFoundException(email)
         if self.users[email].compare(password):
