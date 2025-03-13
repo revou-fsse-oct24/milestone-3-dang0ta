@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from pydantic import ValidationError
 
-from db import UserRepository
+from db_inmemory import UserRepository
 from models import UserCredential, UserInformation
 from auth_jwt import jwt_required, get_jwt_identity
 from auth import AuthRepository

@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime, timedelta
-from db import Repository, UserRepository, AccountRepository, TransactionRepository, DateRange, TransactionQuery, NewTransactionRequest
+from db_inmemory import Repository, UserRepository, AccountRepository, TransactionRepository, DateRange, TransactionQuery, NewTransactionRequest
 from models import Transaction
 
 @pytest.fixture
@@ -340,9 +340,9 @@ def test_new_transaction_request():
             self.recipient_account = None
     
     # Temporarily replace Transaction with MockTransaction for the test
-    import db
-    original_transaction = db.Transaction
-    db.Transaction = MockTransaction
+    import db_inmemory
+    original_transaction = db_inmemory.Transaction
+    db_inmemory.Transaction = MockTransaction
     
     try:
         request = NewTransactionRequest(
@@ -382,7 +382,7 @@ def test_new_transaction_request():
         
     finally:
         # Restore original Transaction class
-        db.Transaction = original_transaction
+        db_inmemory.Transaction = original_transaction
 
 @pytest.fixture
 def transaction_collection():

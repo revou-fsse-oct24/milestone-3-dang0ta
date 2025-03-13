@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from pydantic import ValidationError
 from auth_jwt import jwt_required, get_jwt_identity
-from db import TransactionRepository, TransactionQuery, NewTransactionRequest
+from db_inmemory import TransactionRepository, TransactionQuery, NewTransactionRequest
 
 def transaction_bp(transactions: TransactionRepository) -> Blueprint:
     bp = Blueprint("transactions", __name__, url_prefix="/transactions")
