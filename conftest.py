@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 from app import create_app, DependencyContainer
-from db import UserRepository, AccountRepository, TransactionRepository
+from db_inmemory import UserRepository, AccountRepository, TransactionRepository
 from auth import AuthRepository
 from datetime import timezone, datetime
 from models import UserCredential, Account, Transaction

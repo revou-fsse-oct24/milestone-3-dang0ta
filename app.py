@@ -1,7 +1,8 @@
 from flask import Flask, request
 from werkzeug import exceptions
 
-from db import UserRepository, AccountRepository, TransactionRepository
+from db_inmemory import UserRepository, AccountRepository, TransactionRepository
+from db import *
 from app_config import AppConfig
 from routes import auth_bp, user_bp, accounts_bp, transaction_bp
 from auth import AuthRepository
@@ -17,24 +18,18 @@ class DependencyContainer:
 def create_app(dependencies=None, test_config=None):
     """Create and configure the Flask application"""
     app = Flask(__name__)
-    
-    # Load configuration
     app.config.from_object(AppConfig())
-    
-    # Override config with test_config if provided
+
     if test_config:
         app.config.update(test_config)
-    
-    # Initialize or use provided dependencies
+
     if dependencies is None:
         dependencies = DependencyContainer(app=app)
-    
-    # Store dependencies in app context for access in other places if needed
     app.dependencies = dependencies
     
     # Register blueprints
-    app.register_blueprint(auth_bp(dependencies.auth))
-    app.register_blueprint(user_bp(dependencies.users, dependencies.auth))
+    app.register_blueprint(auth_bp())
+    app.register_blueprint(user_bp())
     app.register_blueprint(accounts_bp(dependencies.accounts))
     app.register_blueprint(transaction_bp(dependencies.transactions))
 

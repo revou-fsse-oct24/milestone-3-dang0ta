@@ -1,6 +1,6 @@
 import os
 from app import create_app
-from db import UserRepository, AccountRepository, TransactionRepository
+from db_inmemory import UserRepository, AccountRepository, TransactionRepository
 from auth import AuthRepository
 
 app = create_app(users=UserRepository({}), auth=AuthRepository(), accounts=AccountRepository({}), transactions=TransactionRepository({}))
