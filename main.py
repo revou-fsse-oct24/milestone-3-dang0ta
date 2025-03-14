@@ -1,9 +1,7 @@
 import os
 from app import create_app
-from db_inmemory import UserRepository, AccountRepository, TransactionRepository
-from auth import AuthRepository
 
-app = create_app(users=UserRepository({}), auth=AuthRepository(), accounts=AccountRepository({}), transactions=TransactionRepository({}))
+app = create_app()
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))

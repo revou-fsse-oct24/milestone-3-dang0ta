@@ -21,8 +21,8 @@ class Account(Base):
     __tablename__ = "accounts"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("user_accounts.id"))
-    user: Mapped["User"] = relationship(back_populates="account")
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user: Mapped["User"] = relationship(back_populates="accounts")
 
     balance: Mapped[int]
 
@@ -39,7 +39,7 @@ class User(Base):
     "This is ORM-related User model, intended for retrieving and writing data to DB"
     "other than the following properties, the properties of this class has to be the exact same as the same class defined in model"
 
-    __tablename__ = "user_accounts"
+    __tablename__ = "users"
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(30))
     fullname: Mapped[Optional[str]]
@@ -95,7 +95,7 @@ class Credential(Base):
     __tablename__ = "user_credentials"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("user_accounts.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     user: Mapped["User"] = relationship(back_populates="credential")
     hash: Mapped[str]
 
