@@ -40,7 +40,7 @@ def test_user():
 
 @pytest.fixture()
 def test_account():
-    return Account(user_id="foo", balance=1000)
+    return Account(balance=1000)
 
 @pytest.fixture()
 def test_transaction():

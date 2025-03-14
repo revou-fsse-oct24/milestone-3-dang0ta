@@ -17,7 +17,6 @@ class UserCredential(UserInformation):
 
 
 class Account(BaseModel):
-    user_id: str
     balance: int
 
 class Transaction(BaseModel):
