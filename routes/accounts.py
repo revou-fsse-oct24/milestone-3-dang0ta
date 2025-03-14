@@ -8,6 +8,7 @@ from db.accounts import get_accounts as db_get_accounts
 from db.accounts import update_account as db_update_account
 from db.accounts import create_account as db_create_account
 from db.accounts import delete_account as db_delete_account
+from db.accounts import AccountsNotFoundException, AccountNotFoundException
 
 def accounts_bp():
     bp = Blueprint("account", __name__, url_prefix="/accounts")
@@ -39,12 +40,15 @@ def accounts_bp():
     return bp
 
 def get_accounts():
-    current_user = get_jwt_identity()
-    if current_user is None:
-        return "Unauthorized", 403
-    
-    acc = db_get_accounts(user_id=current_user)
-    return jsonify({"accounts": list(acc)}), 200
+    try:
+        current_user = get_jwt_identity()
+        if current_user is None:
+            return "Unauthorized", 401
+        
+        acc = db_get_accounts(user_id=current_user)
+        return jsonify({"accounts": [acc.model_dump() for acc in acc]}), 200
+    except AccountsNotFoundException:
+        return jsonify({"accounts": []}), 200
 
 def create_account():
     try:
@@ -60,15 +64,15 @@ def create_account():
         return e.errors(), 400
 
 def get_account(id: str):
-    current_user = get_jwt_identity()
-    if current_user is None:
-        return "Unauthorized", 403
-    
-    acc = db_get_account(user_id=current_user, account_id=id)
-    if acc is None:
-        return "account can't be found", 404
-    
-    return jsonify({"account": acc}), 200
+    try:
+        current_user = get_jwt_identity()
+        if current_user is None:
+            return "Unauthorized", 403
+        
+        acc = db_get_account(user_id=current_user, account_id=id)
+        return jsonify(acc.model_dump()), 200
+    except AccountNotFoundException:
+        return jsonify({"error": "account can't be found"}), 404
 
 def update_account(id: str):
     try:
@@ -79,7 +83,7 @@ def update_account(id: str):
         
         account = Account(**request.get_json())
         db_update_account(user_id=current_user, account_id=id, account=account)
-        return jsonify({"account": account}), 200
+        return jsonify(account.model_dump()), 200
     except ValidationError as e:
         return e.errors(), 400
     except KeyError as e:
