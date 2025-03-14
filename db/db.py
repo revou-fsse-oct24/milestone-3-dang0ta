@@ -1,4 +1,5 @@
 import bcrypt
+import os
 from typing import List
 from typing import Optional
 from sqlalchemy import ForeignKey
@@ -57,8 +58,7 @@ class Credential(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("user_accounts.id"))
     user: Mapped["User"] = relationship(back_populates="credential")
-    
     hash: Mapped[str]
-    
-engine = create_engine("sqlite://", echo=True)
+
+engine = create_engine(os.getenv("DB_CONN"), echo=os.getenv("DEBUG") == "true")
 Base.metadata.create_all(engine)

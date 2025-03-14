@@ -2,6 +2,7 @@ from flask import Flask, request
 from werkzeug import exceptions
 
 from db_inmemory import UserRepository, AccountRepository, TransactionRepository
+from db import *
 from app_config import AppConfig
 from routes import auth_bp, user_bp, accounts_bp, transaction_bp
 from auth import AuthRepository
@@ -27,8 +28,8 @@ def create_app(dependencies=None, test_config=None):
     app.dependencies = dependencies
     
     # Register blueprints
-    app.register_blueprint(auth_bp(dependencies.auth))
-    app.register_blueprint(user_bp(dependencies.users, dependencies.auth))
+    app.register_blueprint(auth_bp())
+    app.register_blueprint(user_bp())
     app.register_blueprint(accounts_bp(dependencies.accounts))
     app.register_blueprint(transaction_bp(dependencies.transactions))
 

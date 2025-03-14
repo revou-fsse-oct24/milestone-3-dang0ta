@@ -11,7 +11,7 @@ def sample_user():
 def test_create_get(sample_user):
     id = create_user(sample_user)
     hash = get_hash(email_address=sample_user.email_address)
-    ok = bcrypt.checkpw("foobarqux".encode(), hashed_password=hash)
+    ok = bcrypt.checkpw(sample_user.password.encode(), hashed_password=hash)
     assert ok == True, "password doesn't match"
     user =get_user(id)
     assert user.email_address == sample_user.email_address
