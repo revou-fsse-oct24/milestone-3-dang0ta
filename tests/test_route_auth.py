@@ -1,12 +1,12 @@
 from werkzeug.test import Client
 from auth_jwt.tokens import create_access_token, create_refresh_token, decode_token
+from db.users import create_user
 
-def test_login_success(app_with_test_data, test_user):
-    client = app_with_test_data.test_client()
-    
+def test_login_success(client, app, test_user):
+    create_user(test_user)
     response = client.post(
         "/auth/login",
-        json={"email": test_user.email, "password": test_user.password}
+        json={"email": test_user.email_address, "password": test_user.password}
     )
     
     assert response.status_code == 200
@@ -15,22 +15,22 @@ def test_login_success(app_with_test_data, test_user):
     assert "refresh_token" in data
     
     # Verify token contains correct identity
-    with app_with_test_data.app_context():
+    with app.app_context():
         decoded = decode_token(data["access_token"])
-        assert decoded["sub"] == "foo"
+        assert decoded["sub"] == "1"
 
-def test_login_invalid_password(app_with_test_data):
-    client = app_with_test_data.test_client()
-    
+def test_login_invalid_password(app, test_user):
+    create_user(test_user)
+    client = app.test_client()
     response = client.post(
         "/auth/login",
-        json={"email": "test@example.com", "password": "wrong_password"}
+        json={"email": test_user.email_address, "password": "wrong_password"}
     )
     
     assert response.status_code == 403
 
-def test_login_nonexistent_user(app_with_test_data):
-    client = app_with_test_data.test_client()
+def test_login_nonexistent_user(app):
+    client = app.test_client()
     
     response = client.post(
         "/auth/login",
@@ -39,8 +39,8 @@ def test_login_nonexistent_user(app_with_test_data):
     
     assert response.status_code == 403
 
-def test_login_missing_email(app_with_test_data):
-    client = app_with_test_data.test_client()
+def test_login_missing_email(app):
+    client = app.test_client()
     
     response = client.post(
         "/auth/login",
@@ -49,8 +49,8 @@ def test_login_missing_email(app_with_test_data):
     
     assert response.status_code in [400, 403]  # Either is acceptable
 
-def test_login_missing_password(app_with_test_data):
-    client = app_with_test_data.test_client()
+def test_login_missing_password(app):
+    client = app.test_client()
     
     response = client.post(
         "/auth/login",
@@ -59,11 +59,11 @@ def test_login_missing_password(app_with_test_data):
     
     assert response.status_code in [400, 403]  # Either is acceptable
 
-def test_refresh_token_success(app_with_test_data):
-    client = app_with_test_data.test_client()
+def test_refresh_token_success(app):
+    client = app.test_client()
     
     # Create refresh token with app context
-    with app_with_test_data.app_context():
+    with app.app_context():
         refresh_token = create_refresh_token(identity="foo")
     
     response = client.post(
@@ -76,12 +76,12 @@ def test_refresh_token_success(app_with_test_data):
     assert "access_token" in data
     
     # Verify new token contains correct identity
-    with app_with_test_data.app_context():
+    with app.app_context():
         decoded = decode_token(data["access_token"])
         assert decoded["sub"] == "foo"
 
-def test_refresh_token_invalid(app_with_test_data):
-    client = app_with_test_data.test_client()
+def test_refresh_token_invalid(app):
+    client = app.test_client()
     
     response = client.post(
         "/auth/refresh",
@@ -90,11 +90,11 @@ def test_refresh_token_invalid(app_with_test_data):
     
     assert response.status_code == 401
 
-def test_refresh_token_access_token(app_with_test_data):
-    client = app_with_test_data.test_client()
+def test_refresh_token_access_token(app):
+    client = app.test_client()
     
     # Create access token instead of refresh token
-    with app_with_test_data.app_context():
+    with app.app_context():
         access_token = create_access_token(identity="foo")
     
     # Try to refresh with an access token
@@ -105,11 +105,11 @@ def test_refresh_token_access_token(app_with_test_data):
     
     assert response.status_code == 401
 
-def test_logout_success(app_with_test_data):
-    client = app_with_test_data.test_client()
+def test_logout_success(app):
+    client = app.test_client()
     
     # Create token with app context
-    with app_with_test_data.app_context():
+    with app.app_context():
         access_token = create_access_token(identity="foo")
     
     response = client.get(
