@@ -9,6 +9,7 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm import sessionmaker
 from flask import current_app as app
 from models import UserCredential, UserInformation, Account as AccountModel
 
@@ -106,3 +107,4 @@ class Credential(Base):
 
 engine = create_engine(os.getenv("DB_CONN"), echo=os.getenv("DEBUG") == "true")
 Base.metadata.create_all(engine)
+Session = sessionmaker(bind=engine)

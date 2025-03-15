@@ -24,5 +24,4 @@ class Transaction(BaseModel):
     account_id: str
     transaction_type: str
     amount: int
-    sender_account: str | None
-    recipient_account: str | None
+    

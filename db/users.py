@@ -4,6 +4,7 @@ from sqlalchemy.exc import NoResultFound
 from models import UserInformation, UserCredential
 from db import engine, User
 from typing import Optional
+from flask import current_app as app
 
 class UserNotFoundException(Exception):
     id: str
@@ -14,19 +15,18 @@ class UserNotFoundException(Exception):
 def create_user(user: UserCredential) -> str:
     try:
         orm_user = User().from_model(user)
-        with Session(engine) as session:
-            session.add(orm_user)
-            session.commit()
-            return orm_user.id
+        app.Session.add(orm_user)
+        app.Session.commit()
+        return orm_user.id
     except NoResultFound as e:
+        app.Session.rollback()
         raise UserNotFoundException(id)
 
 def get_user(id:str) -> Optional[UserInformation]:
     try:
-        with Session(engine) as session:
-            statement = select(User).where(User.id.is_(id))
-            user = session.scalars(statement=statement).one()
-            return user.to_model()
+        statement = select(User).where(User.id.is_(id))
+        user = app.Session.scalars(statement=statement).one()
+        return user.to_model()
     except NoResultFound as e:
         raise UserNotFoundException(id)
     

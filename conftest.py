@@ -1,11 +1,10 @@
 import sys
 from pathlib import Path
-
-
-
 import pytest
 from app import create_app
 from models import UserCredential, Account, Transaction
+from sqlalchemy.orm import Session
+from db import engine
 
 # Add the project root directory to Python's path
 project_root = Path(__file__).parent
@@ -21,7 +20,9 @@ def app():
     })
 
     yield app
-    # do cleanup here
+    app.Session.rollback()
+    app.Session.close()
+
 
 @pytest.fixture()
 def client(app):
