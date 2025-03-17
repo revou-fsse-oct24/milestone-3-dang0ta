@@ -70,3 +70,6 @@ uv run pytest --cov=.
 
 latest coverage: taken at Wednesday, March 12, 2025:
 ![coverage](docs/latest_coverage.png)
+
+## Live API
+The server is up and ready for public access at [this link](disciplinary-sisile-dang0ta-1963dd4c.koyeb.app).
