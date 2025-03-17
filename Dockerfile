@@ -9,7 +9,8 @@ WORKDIR /app
 COPY pyproject.toml uv.lock /app/
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project --no-dev
-ADD . /app
+
+COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
@@ -24,4 +25,8 @@ COPY --from=builder --chown=python:python /python /python
 COPY --from=builder --chown=app:app /app /app
 USER app
 ENV PATH="/app/.venv/bin:$PATH"
+
+EXPOSE 5000
+HEALTHCHECK --interval=30s --timeout=3s CMD curl -f http://localhost:5000/ || exit 1
+
 CMD ["gunicorn", "--chdir", "/app", "-b", "0.0.0.0:5000", "app:create_app"]
