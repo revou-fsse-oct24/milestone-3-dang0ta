@@ -1,0 +1,20 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+.ruff_cache
+.pytest_cache
+htmlcov
+.DS_STORE
+.env
+.vscode
+.coverage
+*.postman.json
+.env.*

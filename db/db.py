@@ -13,7 +13,6 @@ from sqlalchemy.orm import sessionmaker
 from flask import current_app as app
 from models import UserCredential, UserInformation, Account as AccountModel
 
-
 class Base(DeclarativeBase):
     pass
 
@@ -102,7 +101,6 @@ class Credential(Base):
 
     def __repr__(self) -> str:
         return f"Credential(id={self.id!r}, user_id={self.user_id!r}, username={self.user.name!r}, hash={self.hash!r})"
-
 
 
 engine = create_engine(os.getenv("DB_CONN"), echo=os.getenv("DEBUG") == "true")
