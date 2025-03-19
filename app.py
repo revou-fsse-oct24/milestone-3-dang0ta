@@ -1,17 +1,16 @@
-from flask import Flask, request
+from flask import Flask
 from werkzeug import exceptions
 
 from db_inmemory import TransactionRepository
 from app_config import AppConfig
 from routes import auth_bp, user_bp, accounts_bp, transaction_bp
-from db import Session
-from sqlalchemy.orm import scoped_session
+from db import db_session, init_db
 
 def create_app(test_config=None):
     """Create and configure the Flask application"""
     app = Flask(__name__)
     app.config.from_object(AppConfig())
-    app.Session = scoped_session(session_factory=Session)
+    init_db()
 
     if test_config:
         app.config.update(test_config)
@@ -21,6 +20,10 @@ def create_app(test_config=None):
     app.register_blueprint(user_bp())
     app.register_blueprint(accounts_bp())
     app.register_blueprint(transaction_bp(TransactionRepository({})))
+
+    @app.teardown_appcontext
+    def shutdown_session(exception=None):
+        db_session.remove()
 
     @app.errorhandler(exceptions.NotFound)
     def handle_notfound(e):
