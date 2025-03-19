@@ -1,9 +1,7 @@
 from flask import Flask
 from werkzeug import exceptions
-
-from db_inmemory import TransactionRepository
 from app_config import AppConfig
-from routes import auth_bp, user_bp, accounts_bp, transaction_bp
+from routes import register_bp
 from db import db_session, init_db
 
 def create_app(test_config=None):
@@ -15,11 +13,7 @@ def create_app(test_config=None):
     if test_config:
         app.config.update(test_config)
     
-    # Register blueprints
-    app.register_blueprint(auth_bp())
-    app.register_blueprint(user_bp())
-    app.register_blueprint(accounts_bp())
-    app.register_blueprint(transaction_bp(TransactionRepository({})))
+    register_bp(app)
 
     @app.teardown_appcontext
     def shutdown_session(exception=None):
