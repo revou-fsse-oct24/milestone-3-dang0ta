@@ -3,8 +3,7 @@ from pathlib import Path
 import pytest
 from app import create_app
 from models import UserCredential, Account, Transaction
-from sqlalchemy.orm import Session
-from db import engine
+from db import Base, engine
 
 # Add the project root directory to Python's path
 project_root = Path(__file__).parent
@@ -20,8 +19,7 @@ def app():
     })
 
     yield app
-    app.Session.rollback()
-    app.Session.close()
+    Base.metadata.drop_all(engine)
 
 
 @pytest.fixture()
