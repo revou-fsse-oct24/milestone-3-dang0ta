@@ -15,13 +15,11 @@ class UserCredential(UserInformation):
             email_address=self.email_address
         )
 
-
 class Account(BaseModel):
     balance: int
 
 class Transaction(BaseModel):
-    user_id: str
-    account_id: str
-    transaction_type: str
-    amount: int
-    
+    account_id: str = Field(..., description="The ID of the current user's account")
+    recipient_account_id: str | None = Field(None, description="set only if transaction_type is 'transfer', this is the account ID of the recipient account")
+    transaction_type: str = Field(..., description="either 'withdraw', 'deposit' or 'transfer'")
+    amount: int = Field(..., description="the nominal of the transfer, accepts only positive number if transfer_type is 'withdraw' or 'deposit'. Negative number on transaction_type transfer indicates transfer from account_id to recipient_account_id, positive number indicates otherwise")
