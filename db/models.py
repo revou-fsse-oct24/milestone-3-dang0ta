@@ -12,25 +12,39 @@ class Transaction(Base):
     __tablename__ = "transactions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-
-    account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id"))
-    account:Mapped["Account"] = relationship(back_populates="transactions")
-
-    recipient_account_id: Mapped[Optional[int]] = mapped_column(ForeignKey("accounts.id"))
-    recipient_account: Mapped[Optional["User"]] = relationship(back_populates="transactions")
-
-    amount: Mapped[int]
     transaction_type: Mapped[TransactionType] = mapped_column(
         Enum(*get_args(TransactionType), name="transaction_type_enum")
     )
+    entries: Mapped[List["TransactionEntries"]] = relationship(
+        back_populates="transaction", cascade="all, delete-orphan"
+    )
     timestamp: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
+class TransactionEntries(Base):
+    __tablename__ = "transaction_entries"
+    entry_id: Mapped[int] = mapped_column(primary_key=True)
+    transaction_id: Mapped[int] = mapped_column(ForeignKey("transactions.id"))
+    account_id:Mapped[int] = mapped_column(ForeignKey="accounts.id")
+    transaction: Mapped["Transaction"] = relationship(back_populates="entries")
+    amount: Mapped[int]
+
     def to_model(self) -> TransactionModel:
+        if self.transaction.entries.count < 2:
+            return TransactionModel(
+                account_id=self.account_id,
+                transaction_type=self.transaction.transaction_type,
+                amount=self.amount,
+            )
+        sender, receiver = self.transaction.entries[0], self.transaction.entries[1]
+        if sender.amount < 0:
+            receiver = self.transaction.entries[0]
+            sender = self.transaction.entries[1]
+
         return TransactionModel(
-            account_id=self.account_id,
-            recipient_account_id=self.recipient_account_id,
+            account_id=sender.account_id,
+            recipient_account_id=receiver.account_id,
             amount=self.amount,
-            transaction_type=self.transaction_type
+            transaction_type=self.transaction.transaction_type
         )
 
 class Account(Base):
