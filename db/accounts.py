@@ -2,9 +2,8 @@ from typing import List, Optional
 from models import Account as AccountModel
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
-from db import Base, db_session
+from db import db_session
 from .models import User, Account
-
 
 class AccountsNotFoundException(Exception):
     def __init__(self, user_id:str):
@@ -20,9 +19,6 @@ def get_accounts(user_id:str) -> List[AccountModel]:
     try:
         statement=select(User).where(User.id.is_(user_id))
         user = db_session.scalars(statement=statement).one()
-        if user is None:
-            return []
-        
         return user.get_accounts()
     except NoResultFound:
         raise AccountsNotFoundException(user_id=user_id)
@@ -37,9 +33,6 @@ def get_account(user_id:str, account_id:str) -> Optional[AccountModel]:
         )
 
         account = db_session.scalars(statement=statement).one()
-        if account is None:
-            return None
-        
         return account.to_model()
     except NoResultFound:
         raise AccountNotFoundException(account_id=account_id)
@@ -54,9 +47,6 @@ def update_account(user_id:str, account_id:str, account: AccountModel) -> Option
         )
 
         existing = db_session.scalars(statement=statement).one()
-        if existing is None:
-            return None
-        
         existing.update(account)
         db_session.commit()
         return existing.to_model()
@@ -71,9 +61,6 @@ def create_account(user_id:str, account: AccountModel) -> Optional[str]:
     try:
         statement = select(User).where(User.id.is_(user_id))
         user = db_session.scalars(statement=statement).one()
-        if user is None:
-            return None
-        
         added = user.add_account(account)
         db_session.commit()
         return added.id
@@ -84,7 +71,6 @@ def create_account(user_id:str, account: AccountModel) -> Optional[str]:
         db_session.rollback()
         raise e
     
-        
 def delete_account(user_id:str, account_id:str):
     try:
         user = db_session.get(User, user_id)
