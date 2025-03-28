@@ -63,16 +63,17 @@ class TransactionEntries(Base):
     transaction_id: Mapped[int] = mapped_column(ForeignKey("transactions.id"))
     transaction: Mapped["Transactions"] = relationship(back_populates="entries")
 
-    account_id:Mapped[int] = mapped_column(ForeignKey="accounts.id")
+    account_id:Mapped[int] = mapped_column(ForeignKey("accounts.id"))
     account:Mapped["Account"] = relationship(back_populates="transaction_entries")
 
-    entry_type: Mapped[TransactionEntryType] = relationship(
+    entry_type: Mapped[TransactionEntryType] = mapped_column(
         Enum(*get_args(TransactionEntryType), name="transaction_entry_type_enum")
     )
 
     def to_model(self) -> TransactionModel:
         return TransactionModel(
-            account_id=self.account_id,
+            id=str(self.transaction.id),
+            account_id=str(self.account_id),
             transaction_type=self.transaction.transaction_type,
             amount=self.amount,
         )
