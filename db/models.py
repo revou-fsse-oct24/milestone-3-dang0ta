@@ -71,22 +71,10 @@ class TransactionEntries(Base):
     )
 
     def to_model(self) -> TransactionModel:
-        if self.transaction.entries.count < 2:
-            return TransactionModel(
-                account_id=self.account_id,
-                transaction_type=self.transaction.transaction_type,
-                amount=self.amount,
-            )
-        sender, receiver = self.transaction.entries[0], self.transaction.entries[1]
-        if sender.amount < 0:
-            receiver = self.transaction.entries[0]
-            sender = self.transaction.entries[1]
-
         return TransactionModel(
-            account_id=sender.account_id,
-            recipient_account_id=receiver.account_id,
+            account_id=self.account_id,
+            transaction_type=self.transaction.transaction_type,
             amount=self.amount,
-            transaction_type=self.transaction.transaction_type
         )
 
 class Account(Base):
