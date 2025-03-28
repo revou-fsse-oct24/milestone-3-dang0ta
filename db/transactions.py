@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Dict
 from db import db_session
 from models import Transaction as TransactionModel
 from .accounts import AccountNotFoundException, AccountsNotFoundException
@@ -8,8 +8,9 @@ from .models import Account, Transactions, TransactionEntries, User
 
 class TransactionNotFoundException(Exception):
     def __init__(self, *, transaction_id:str):
+        super().__init__("transaction not found")
         self.transaction_id = transaction_id
-        super.__init__("transaction not found")
+
 
 def withdraw(account_id:str, amount:int) -> Optional[TransactionModel]:
     try:
@@ -30,18 +31,20 @@ def withdraw(account_id:str, amount:int) -> Optional[TransactionModel]:
             transaction = transaction,
             account_id = account_id,
             account = account,
-            entry_type = "debit"
+            entry_type = "debit",
+            amount = amount
         )
 
         db_session.add(transaction)
         db_session.add(entry)
         db_session.commit()
-        return transaction.to_model()
+        return entry.to_model()
     except NoResultFound:
         db_session.rollback()
         raise AccountNotFoundException(account_id=account_id)
-    except Exception:
+    except Exception as e:
         db_session.rollback()
+        raise e
 
 def deposit(account_id:str, amount:int) -> Optional[TransactionModel]:
     try:
@@ -60,20 +63,22 @@ def deposit(account_id:str, amount:int) -> Optional[TransactionModel]:
         entry = TransactionEntries(
             transaction_id = transaction.id,
             transaction = transaction,
-            account_id = account_id,
+            account_id = account.id,
             account = account,
-            entry_type = "credit"
+            entry_type = "credit",
+            amount=amount
         )
 
         db_session.add(transaction)
         db_session.add(entry)
         db_session.commit()
-        return transaction.to_model()
+        return entry.to_model()
     except NoResultFound:
         db_session.rollback()
         raise AccountNotFoundException(account_id=account_id)
-    except Exception:
+    except Exception as e:
         db_session.rollback()
+        raise e
 
 def transfer(sender_account_id: str, recipient_account_id: str, amount: int) -> Optional[TransactionModel]:
     try:
@@ -100,7 +105,8 @@ def transfer(sender_account_id: str, recipient_account_id: str, amount: int) -> 
             transaction = transaction,
             account_id = sender_account_id,
             account = sender_account,
-            entry_type = "debit"
+            entry_type = "debit",
+            amount = amount
         )
 
         recipient_entry = TransactionEntries(
@@ -108,17 +114,18 @@ def transfer(sender_account_id: str, recipient_account_id: str, amount: int) -> 
             transaction = transaction,
             account_id = recipient_account_id,
             account = recipient_account,
-            entry_type = "credit"
+            entry_type = "credit",
+            amount = amount
         )
 
         db_session.add(transaction)
         db_session.add(sender_entry)
         db_session.add(recipient_entry)
         db_session.commit()
-        return transaction.to_model()
-    except NoResultFound:
+        return sender_entry.to_model()
+    except NoResultFound as e:
         db_session.rollback()
-        raise AccountNotFoundException(account_id=account_id)
+        raise AccountNotFoundException(account_id=sender_account_id)
     except Exception as e:
         db_session.rollback()
         raise e
@@ -130,10 +137,10 @@ def get_transactions(account_id: str) -> List[TransactionModel]:
             .where(Account.id.is_(account_id))
         ))
 
-        transactions: List[TransactionModel] = []
+        transactions: List[Dict] = []
         for account in accounts:
             for transaction in account.transaction_entries:
-                transactions.append(transaction.to_model())
+                transactions.append(transaction.to_model().model_dump())
 
         return transactions
     except NoResultFound:
@@ -145,12 +152,15 @@ def get_transactions(account_id: str) -> List[TransactionModel]:
     
 def get_transaction(transaction_id:str) -> Optional[TransactionModel]:
     try:
-        transaction=db_session.scalars(statement=(
-            select(Transactions)
-            .where(Transactions.id.is_(transaction_id))
+
+        entry = db_session.scalars(statement=(
+            select(TransactionEntries)
+            .where(TransactionEntries.transaction_id.is_(transaction_id))
         )).one()
-    
-        return transaction.to_model()
+        
+        
+
+        return entry.to_model()
     except NoResultFound:
         db_session.rollback()
-        raise TransactionNotFoundException(transaction_id==transaction_id)
+        raise TransactionNotFoundException(transaction_id=transaction_id)
