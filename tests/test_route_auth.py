@@ -1,4 +1,3 @@
-from werkzeug.test import Client
 from auth_jwt.tokens import create_access_token, create_refresh_token, decode_token
 from db.users import create_user
 
