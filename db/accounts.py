@@ -61,9 +61,11 @@ def create_account(user_id:str, account: AccountModel) -> Optional[str]:
     try:
         statement = select(User).where(User.id.is_(user_id))
         user = db_session.scalars(statement=statement).one()
-        added = user.add_account(account)
+        account = Account(balance=account.balance, user=user, user_id=user_id)
+        user.accounts.append(account)
+        db_session.add(account)
         db_session.commit()
-        return added.id
+        return account.id
     except NoResultFound as e:
         db_session.rollback()
         raise AccountNotFoundException(account_id="")
