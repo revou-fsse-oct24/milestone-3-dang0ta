@@ -1,7 +1,7 @@
 import bcrypt
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
-from db import Base, db_session
+from db import db_session
 from .models import User
 class UserNotFoundException(Exception):
     # keep the email for logging
@@ -16,12 +16,6 @@ class WrongCredentialException(Exception):
     def __init__(self, email):
         super().__init__("incorrect email/password")
         self.email = email
-
-
-def get_hash(email_address:str) -> str:
-    statement = select(User).where(User.email_address.is_(email_address))
-    user = db_session.scalars(statement=statement).one()
-    return user.credential.hash
     
 def get_and_compare_hash(email_address:str, password:str) -> str:
     if email_address is None or password is None:
