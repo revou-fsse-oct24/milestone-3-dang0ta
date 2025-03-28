@@ -3,12 +3,12 @@ from datetime import timedelta, datetime, timezone
 from flask import current_app
 from typing import Dict
 
-def create_access_token(identity:str, expires_delta=None) -> str:
+def create_access_token(identity:int, expires_delta=None) -> str:
     if not expires_delta:
         expires_delta = timedelta(hours=1) # token is expired in 1 hour by default.
 
     payload = {
-        'sub': identity,
+        'sub': str(identity),
         'exp': datetime.now(timezone.utc) + expires_delta,
         'iat': datetime.now(timezone.utc),  # created at
         'type': 'access' # OAuth 2.0 common custom claim, indicates access token.

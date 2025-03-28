@@ -2,10 +2,9 @@ from flask import Blueprint, request, jsonify
 from pydantic import ValidationError
 
 from auth_jwt import create_access_token, create_refresh_token, is_valid_token, add_to_blacklist
-from auth import AuthRepository, WrongCredentialException, UserNotFoundException
+from db.credentials import get_and_compare_hash, WrongCredentialException, UserNotFoundException
 
-
-def auth_bp(auth: AuthRepository) -> Blueprint:
+def auth_bp() -> Blueprint:
     bp = Blueprint("auth", __name__, url_prefix="/auth")
 
     @bp.route("/login", methods=["POST"])
@@ -15,8 +14,8 @@ def auth_bp(auth: AuthRepository) -> Blueprint:
             email = data.get("email")
             password = data.get("password")
 
-            user_id = auth.authenticate(email, password)
-            if user_id == None:
+            user_id = get_and_compare_hash(email_address=email, password=password)
+            if user_id is None:
                 raise UserNotFoundException(email)
             
             access_token = create_access_token(identity=user_id)

@@ -1,8 +1,8 @@
 import os
 from app import create_app
-from db import UserRepository, AccountRepository, TransactionRepository
-from auth import AuthRepository
+from dotenv import load_dotenv
 
+load_dotenv()
 app = create_app()
 
 if __name__ == '__main__':

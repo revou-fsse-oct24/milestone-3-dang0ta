@@ -23,7 +23,7 @@ def jwt_required(f):
     @wraps(f)
     def decorator(*args, **kwargs):
         token = _get_token()
-        if token == None:
+        if token is None:
             return "Unauthorized", 401
 
         if is_blacklisted(token):
