@@ -3,23 +3,15 @@ from pathlib import Path
 import pytest
 from app import create_app
 from models import UserCredential, Account, Transaction
-from db import Base, engine
-
-# Add the project root directory to Python's path
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root))
-
+from db import Base, DB
 
 @pytest.fixture()
 def app():
     app =  create_app()
-    app.config.update({
-        "TESTING": True,
-        "JWT_SECRET": "test"
-    })
+    app.config.update()
 
     yield app
-    Base.metadata.drop_all(engine)
+    Base.metadata.drop_all(DB.get_engine())
 
 
 @pytest.fixture()
