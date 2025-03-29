@@ -1,10 +1,9 @@
 from typing import Optional, List, Dict
-from db import db_session
+from db import db_session, Accounts, Transactions, TransactionEntries
 from models import Transaction as TransactionModel
 from .accounts import AccountNotFoundException, AccountsNotFoundException
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
-from .models import Account, Transactions, TransactionEntries, User
 
 class TransactionNotFoundException(Exception):
     def __init__(self, *, transaction_id:str):
@@ -15,8 +14,8 @@ class TransactionNotFoundException(Exception):
 def withdraw(account_id:str, amount:int) -> Optional[TransactionModel]:
     try:
         statement = (
-            select(Account)
-            .where(Account.id.is_(account_id))
+            select(Accounts)
+            .where(Accounts.id.is_(account_id))
         )
 
         account = db_session.scalars(statement=statement).one()
@@ -49,8 +48,8 @@ def withdraw(account_id:str, amount:int) -> Optional[TransactionModel]:
 def deposit(account_id:str, amount:int) -> Optional[TransactionModel]:
     try:
         statement = (
-            select(Account)
-            .where(Account.id.is_(account_id))
+            select(Accounts)
+            .where(Accounts.id.is_(account_id))
         )
 
         account = db_session.scalars(statement=statement).one()
@@ -83,15 +82,15 @@ def deposit(account_id:str, amount:int) -> Optional[TransactionModel]:
 def transfer(sender_account_id: str, recipient_account_id: str, amount: int) -> Optional[TransactionModel]:
     try:
         sender_account = db_session.scalars(statement=(
-            select(Account)
-            .where(Account.id.is_(sender_account_id))
+            select(Accounts)
+            .where(Accounts.id.is_(sender_account_id))
         )).one()
 
         sender_account.balance = sender_account.balance - amount
 
         recipient_account = db_session.scalars(statement=(
-            select(Account)
-            .where(Account.id.is_(recipient_account_id))
+            select(Accounts)
+            .where(Accounts.id.is_(recipient_account_id))
         )).one()
 
         recipient_account.balance = recipient_account.balance + amount
@@ -133,8 +132,8 @@ def transfer(sender_account_id: str, recipient_account_id: str, amount: int) -> 
 def get_transactions(account_id: str) -> List[TransactionModel]:
     try:
         accounts=db_session.scalars(statement=(
-            select(Account)
-            .where(Account.id.is_(account_id))
+            select(Accounts)
+            .where(Accounts.id.is_(account_id))
         ))
 
         transactions: List[Dict] = []
