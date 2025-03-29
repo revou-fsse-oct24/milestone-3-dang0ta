@@ -10,6 +10,11 @@ from exceptions import ConfigurationError
 from config import db_conn
 from models import Account as AccountModel, UserCredential, UserInformation, Transaction as TransactionModel
 
+engine = create_engine(db_conn, echo=os.getenv('DEBUG', 'False').lower() in ['true', '1', 't'])
+db_session = scoped_session(sessionmaker(
+    autoflush=False, 
+    bind=engine,
+    autocommit=False))
 
 class DB:
     _instance: Engine = create_engine(db_conn, echo=os.getenv('DEBUG', 'False').lower() in ['true', '1', 't'])

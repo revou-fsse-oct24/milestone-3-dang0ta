@@ -36,3 +36,9 @@ target-version = "py39"
 
 [tool.uv]
 # UV-specific settings can go here if needed in the future
+
+[tool.pytest_env]
+DB_CONN = "sqlite:///"
+DEBUG = 1
+JWT_SECRET = "supersecretkey"
+PYTHONPATH = "src"
