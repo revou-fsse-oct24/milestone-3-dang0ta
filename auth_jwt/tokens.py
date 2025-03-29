@@ -1,7 +1,15 @@
 from jwt import encode, decode, ExpiredSignatureError, InvalidTokenError
 from datetime import timedelta, datetime, timezone
 from flask import current_app
+from config import jwt_secret, jwt_algorithm
+from exceptions import ConfigurationError
 from typing import Dict
+
+if not jwt_secret:
+    raise ConfigurationError("JWT_SECRET is not set")
+
+if not jwt_algorithm:
+    raise ConfigurationError("JWT_ALGORITHM is not set")
 
 def create_access_token(identity:int, expires_delta=None) -> str:
     if not expires_delta:
@@ -14,7 +22,7 @@ def create_access_token(identity:int, expires_delta=None) -> str:
         'type': 'access' # OAuth 2.0 common custom claim, indicates access token.
     }
 
-    token = encode(payload, current_app.config['JWT_SECRET'], algorithm='HS256')
+    token = encode(payload, jwt_secret, algorithm=jwt_algorithm)
     return token
 
 def create_refresh_token(identity: str) -> str:
@@ -25,12 +33,12 @@ def create_refresh_token(identity: str) -> str:
         'type': 'refresh', # OAuth 2.0 common custom claim, indicates refresh token. 
     }
 
-    token = encode(payload, current_app.config['JWT_SECRET'], algorithm='HS256')
+    token = encode(payload, jwt_secret, algorithm=jwt_algorithm)
     return token
 
 def decode_token(token: str) -> Dict:
     try:
-        payload = decode(token, current_app.config['JWT_SECRET'], algorithms='HS256')
+        payload = decode(token, jwt_secret, algorithms=jwt_algorithm)
         return payload
     except ExpiredSignatureError:
         return {'error': 'Token Expired'}
