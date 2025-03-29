@@ -2,8 +2,7 @@ from typing import List, Optional
 from models import Account as AccountModel
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
-from db import db_session
-from .models import User, Account
+from db import db_session, Users, Accounts
 
 class AccountsNotFoundException(Exception):
     def __init__(self, user_id:str):
@@ -17,8 +16,8 @@ class AccountNotFoundException(Exception):
 
 def get_accounts(user_id:str) -> List[AccountModel]:
     try:
-        statement=select(User).where(User.id.is_(user_id))
-        user = db_session.scalars(statement=statement).one()
+        statement=select(Users).where(Users.id.is_(user_id))
+        user = db_session().scalars(statement=statement).one()
         return user.get_accounts()
     except NoResultFound:
         raise AccountsNotFoundException(user_id=user_id)
@@ -26,10 +25,10 @@ def get_accounts(user_id:str) -> List[AccountModel]:
 def get_account(user_id:str, account_id:str) -> Optional[AccountModel]:
     try:
         statement = (
-            select(Account)
-            .join(User)
-            .where(Account.id.is_(account_id))
-            .where(User.id.is_(user_id))
+            select(Accounts)
+            .join(Users)
+            .where(Accounts.id.is_(account_id))
+            .where(Users.id.is_(user_id))
         )
 
         account = db_session.scalars(statement=statement).one()
@@ -40,10 +39,10 @@ def get_account(user_id:str, account_id:str) -> Optional[AccountModel]:
 def update_account(user_id:str, account_id:str, account: AccountModel) -> Optional[AccountModel]:
     try:
         statement = (
-            select(Account)
-            .join(User)
-            .where(Account.id.is_(account_id))
-            .where(User.id.is_(user_id))
+            select(Accounts)
+            .join(Users)
+            .where(Accounts.id.is_(account_id))
+            .where(Users.id.is_(user_id))
         )
 
         existing = db_session.scalars(statement=statement).one()
@@ -59,9 +58,9 @@ def update_account(user_id:str, account_id:str, account: AccountModel) -> Option
     
 def create_account(user_id:str, account: AccountModel) -> Optional[str]:
     try:
-        statement = select(User).where(User.id.is_(user_id))
+        statement = select(Users).where(Users.id.is_(user_id))
         user = db_session.scalars(statement=statement).one()
-        account = Account(balance=account.balance, user=user, user_id=user_id)
+        account = Accounts(balance=account.balance, user=user, user_id=user_id)
         user.accounts.append(account)
         db_session.add(account)
         db_session.commit()
@@ -75,8 +74,8 @@ def create_account(user_id:str, account: AccountModel) -> Optional[str]:
     
 def delete_account(user_id:str, account_id:str):
     try:
-        user = db_session.get(User, user_id)
-        account = db_session.get(Account, account_id)
+        user = db_session.get(Users, user_id)
+        account = db_session.get(Accounts, account_id)
         user.accounts.remove(account)
         db_session.commit()
         db_session.flush()

@@ -1,9 +1,8 @@
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
 from models import UserInformation, UserCredential
-from db import db_session
+from db import db_session, Users
 from typing import Optional
-from .models import User
 
 class UserNotFoundException(Exception):
     id: str
@@ -13,17 +12,20 @@ class UserNotFoundException(Exception):
 
 def create_user(user: UserCredential) -> str:
     try:
-        orm_user = User().from_model(user)
+        orm_user = Users().from_model(user)
         db_session.add(orm_user)
         db_session.commit()
         return orm_user.id
     except NoResultFound as e:
         db_session.rollback()
         raise UserNotFoundException(id)
+    except Exception as e:
+        db_session.rollback()
+        raise e
 
 def get_user(id:str) -> Optional[UserInformation]:
     try:
-        statement = select(User).where(User.id.is_(id))
+        statement = select(Users).where(Users.id.is_(id))
         user = db_session.scalars(statement=statement).one()
         return user.to_model()
     except NoResultFound as e:
@@ -31,7 +33,7 @@ def get_user(id:str) -> Optional[UserInformation]:
     
 def update_user(id: str, user: UserInformation) -> Optional[UserInformation]:
     try:
-        statement = select(User).where(User.id.is_(id))
+        statement = select(Users).where(Users.id.is_(id))
         existing = db_session.scalars(statement=statement).one()
         if existing is None:
             return None
