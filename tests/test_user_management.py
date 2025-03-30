@@ -185,3 +185,23 @@ class TestUpdateCurrentUser:
     def test_update_current_user_invalid_token(self, client: Client, access_token: str):
         response = client.put("/users/me", headers={"Authorization": f"Bearer {access_token}123"}, json={"name": "bar", "email_address": "bar@qux.com"})
         assert response.status_code == 401, response.get_data()
+
+    def test_update_current_user_missing_name(self, client: Client, access_token: str):
+        response = client.put("/users/me", headers={"Authorization": f"Bearer {access_token}"}, json={"email_address": "bar@qux.com"})
+        assert response.status_code == 400, response.get_data()
+        assert response.get_data() == b'{"error":"missing user name"}\n'
+
+    def test_update_current_user_missing_email(self, client: Client, access_token: str):
+        response = client.put("/users/me", headers={"Authorization": f"Bearer {access_token}"}, json={"name": "bar"})
+        assert response.status_code == 400, response.get_data()
+        assert response.get_data() == b'{"error":"missing email address"}\n'
+
+    def test_update_current_user_invalid_email(self, client: Client, access_token: str):
+        response = client.put("/users/me", headers={"Authorization": f"Bearer {access_token}"}, json={"name": "bar", "email_address": "foobarqux"})
+        assert response.status_code == 400, response.get_data()
+        assert response.get_data() == b'{"error":"invalid email address"}\n'
+        
+        
+        
+        
+        

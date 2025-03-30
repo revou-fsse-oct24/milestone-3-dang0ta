@@ -63,6 +63,14 @@ def handle_update_me():
         updated = db_update_user(current_user, UserInformation(**request.get_json()))
         return jsonify(updated.model_dump()), 200
     except ValidationError as e:
+        errors = e.errors()
+        for error in errors:
+            if error['loc'][0] == 'name' and error['msg'] == 'Field required':
+                return jsonify({"error": "missing user name"}), 400
+            if error['loc'][0] == 'email_address' and error['msg'] == 'Field required':
+                return jsonify({"error": "missing email address"}), 400
+            if error['loc'][0] == 'email_address':
+                return jsonify({"error": "invalid email address"}), 400
         return e.errors(), 400
     except ValueError as e:
         return str(e), 400
