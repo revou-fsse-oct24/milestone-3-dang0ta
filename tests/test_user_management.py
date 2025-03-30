@@ -117,7 +117,20 @@ class TestPostUsers:
         assert response.status_code == 401, response.get_data()
 
 class TestGetCurrentUser:
+    """Test suite for the current user retrieval endpoint (GET /users/me).
+    
+    This class contains tests for retrieving the currently authenticated user's information,
+    including authentication validation and error handling.
+    """
+    
     def test_get_authenticated_user(self, client: Client, access_token: str, test_user: UserCredential):
+        """Test successful retrieval of authenticated user's information.
+        
+        Verifies that:
+        1. The endpoint returns 200 status code for authenticated requests
+        2. The response contains correct user information
+        3. The user data matches the test user's credentials
+        """
         response = client.get("/users/me", headers={"Authorization": f"Bearer {access_token}"})
         assert response.status_code == 200, response.get_data()
         response_data = response.get_json()
@@ -125,15 +138,40 @@ class TestGetCurrentUser:
         assert response_data["email_address"] == test_user.email_address
 
     def test_get_unauthenticated_user(self, client: Client):
+        """Test access denial for unauthenticated requests.
+        
+        Verifies that:
+        1. The endpoint returns 401 status code when no authentication is provided
+        2. Unauthenticated users cannot access their profile
+        """
         response = client.get("/users/me")
         assert response.status_code == 401, response.get_data()
 
     def test_get_authenticated_user_with_invalid_token(self, client: Client, access_token: str):
+        """Test access denial for requests with invalid authentication token.
+        
+        Verifies that:
+        1. The endpoint returns 401 status code when an invalid token is provided
+        2. Users cannot access their profile with malformed or invalid tokens
+        """
         response = client.get("/users/me", headers={"Authorization": f"Bearer {access_token}123"})
         assert response.status_code == 401, response.get_data()
 
 class TestUpdateCurrentUser:
+    """Test suite for the current user update endpoint (PUT /users/me).
+    
+    This class contains tests for updating the currently authenticated user's information,
+    including successful updates and validation.
+    """
+    
     def test_update_current_user(self, client: Client, access_token: str):
+        """Test successful update of authenticated user's information.
+        
+        Verifies that:
+        1. The endpoint returns 200 status code for successful updates
+        2. The user's information is correctly updated
+        3. The response contains the updated user information
+        """
         response = client.put("/users/me", headers={"Authorization": f"Bearer {access_token}"}, json={"name": "bar", "email_address": "bar@qux.com"})
         assert response.status_code == 200, response.get_data()
         response_data = response.get_json()
