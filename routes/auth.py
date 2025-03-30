@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from pydantic import ValidationError
 
-from auth_jwt import create_access_token, create_refresh_token, is_valid_token, add_to_blacklist
+from auth_jwt import create_access_token, create_refresh_token, is_valid_token, add_to_blacklist, jwt_required, get_token
 from db.credentials import get_and_compare_hash, WrongCredentialException, UserNotFoundException
 
 def auth_bp() -> Blueprint:
@@ -41,9 +41,10 @@ def auth_bp() -> Blueprint:
         return jsonify({'access_token': new_access_token}), 200
         
     @bp.route("/logout")
+    @jwt_required
     def logout():
-        token = request.json.get('access_token')
-        if token:
+        token = get_token()
+        if token is not None:
             add_to_blacklist(token)
         return jsonify({'message': 'Logged out successfully'}), 200
         

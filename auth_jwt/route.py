@@ -5,7 +5,7 @@ from .blacklist import is_blacklisted
 from typing import Optional
 
 def get_jwt_identity() -> Optional[str]:
-    token = _get_token()
+    token = get_token()
     if not token:
         return None
     
@@ -22,7 +22,7 @@ def get_jwt_identity() -> Optional[str]:
 def jwt_required(f):
     @wraps(f)
     def decorator(*args, **kwargs):
-        token = _get_token()
+        token = get_token()
         if token is None:
             return "Unauthorized", 401
 
@@ -36,7 +36,7 @@ def jwt_required(f):
         return f(*args, **kwargs)
     return decorator
 
-def _get_token()-> Optional[str]:
+def get_token()-> Optional[str]:
     auth_header = request.headers.get('Authorization')
     if not auth_header:
         return None
