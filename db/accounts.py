@@ -1,6 +1,6 @@
 from typing import List, Optional
 from models import Account as AccountModel
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.exc import NoResultFound
 from db import db_session, Users, Accounts
 
@@ -74,11 +74,11 @@ def create_account(user_id:str, account: AccountModel) -> Optional[str]:
     
 def delete_account(user_id:str, account_id:str):
     try:
-        user = db_session.get(Users, user_id)
-        account = db_session.get(Accounts, account_id)
-        user.accounts.remove(account)
+        statement = delete(Accounts).where(Accounts.id.is_(account_id)).returning(Accounts.id)
+        result = db_session.execute(statement=statement).one()
         db_session.commit()
         db_session.flush()
+        return result[0]
     except NoResultFound as e:
         db_session.rollback()
         raise AccountNotFoundException(account_id=account_id)

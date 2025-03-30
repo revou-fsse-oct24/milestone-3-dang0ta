@@ -4,6 +4,7 @@ import pytest
 from app import create_app
 from models import UserCredential, Account, Transaction
 from db import Base, DB
+from typing import List
 
 @pytest.fixture()
 def app():
@@ -27,7 +28,7 @@ def test_user() -> UserCredential:
     return UserCredential(name="test_user", email_address="test@example.com", password="password")
 
 @pytest.fixture()
-def test_account():
+def test_account() -> Account:
     return Account(balance=1000)
 
 @pytest.fixture()
@@ -48,7 +49,6 @@ def access_token(client, test_user: UserCredential):
 
     response_data = response.get_json()
     assert response_data["id"] is not None
-    id = response_data["id"]
 
     response = client.post("/auth/login", json={"email": test_user.email_address, "password": test_user.password})
     assert response.status_code == 200, response.get_data()
@@ -58,3 +58,19 @@ def access_token(client, test_user: UserCredential):
 
     access_token = response_data["access_token"]
     return access_token
+
+@pytest.fixture()
+def test_user_with_accounts(client, access_token: str, test_account: Account) -> List[Account]:    
+    response = client.post("/accounts/", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": test_account.balance})
+    assert response.status_code == 201, response.get_data()
+    response_json = response.get_json()
+    assert "account_id" in response_json
+    return [test_account]
+
+@pytest.fixture()
+def test_user_with_account_id(client, access_token: str, test_account: Account) -> str:    
+    response = client.post("/accounts/", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": test_account.balance})
+    assert response.status_code == 201, response.get_data()
+    response_json = response.get_json()
+    assert "account_id" in response_json
+    return response_json["account_id"]
