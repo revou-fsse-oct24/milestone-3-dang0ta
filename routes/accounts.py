@@ -22,7 +22,7 @@ def accounts_bp():
             case "POST":
                 return create_account()
             case _:
-                return "Method not allowed", 405
+                return jsonify({"error": "Method not allowed"}), 405
     
     @bp.route("/<string:id>", methods=["GET", "PUT", "DELETE"])
     @jwt_required
@@ -35,7 +35,7 @@ def accounts_bp():
             case "DELETE":
                 return delete_account(id)
             case _:
-                return "Method not allowed", 405
+                return jsonify({"error": "Method not allowed"}), 405
     
     return bp
 
@@ -43,7 +43,7 @@ def get_accounts():
     try:
         current_user = get_jwt_identity()
         if current_user is None:
-            return "Unauthorized", 401
+            return jsonify({"error": "Unauthorized"}), 401
         
         acc = db_get_accounts(user_id=current_user)
         return jsonify({"accounts": [acc.model_dump() for acc in acc]}), 200
@@ -54,47 +54,56 @@ def create_account():
     try:
         current_user = get_jwt_identity()
         if current_user is None:
-            return "Unauthorized", 403
+            return jsonify({"error": "Unauthorized"}), 403
         
         acc = Account(**request.get_json())
 
         id=db_create_account(user_id=current_user, account=acc)
-        return jsonify({"account_id": id}), 200
+        return jsonify({"account_id": id}), 201
     except ValidationError as e:
-        return e.errors(), 400
+        errors = e.errors()
+        if not errors:
+            return jsonify({"error": "Invalid account data"}), 400
+            
+        error = errors[0]
+        field = error.get("loc", [])[0] if error.get("loc") else "unknown"
+        return jsonify({"error": f"invalid {field}"}), 400
 
 def get_account(id: str):
     try:
         current_user = get_jwt_identity()
-        if current_user is None:
-            return "Unauthorized", 403
-        
         acc = db_get_account(user_id=current_user, account_id=id)
         return jsonify(acc.model_dump()), 200
     except AccountNotFoundException:
-        return jsonify({"error": "account can't be found"}), 404
+        return jsonify({"error": "Account not found"}), 404
 
 def update_account(id: str):
     try:
         current_user = get_jwt_identity()
-        if current_user is None:
-            return "Unauthorized", 403
-        
-        
         account = Account(**request.get_json())
         db_update_account(user_id=current_user, account_id=id, account=account)
         return jsonify(account.model_dump()), 200
     except ValidationError as e:
-        return e.errors(), 400
+        errors = e.errors()
+        if not errors:
+            return jsonify({"error": "Invalid account data"}), 400
+            
+        error = errors[0]
+        field = error.get("loc", [])[0] if error.get("loc") else "unknown"
+        return jsonify({"error": f"invalid {field}"}), 400
+
+    except AccountNotFoundException:
+        return jsonify({"error": "Account not found"}), 404
+    
     except KeyError as e:
-        return str(e), 400
+        return jsonify({"error": str(e)}), 400
     except ValueError as e:
-        return str(e), 400
+        return jsonify({"error": str(e)}), 400
     
 def delete_account(id:str):
-    current_user = get_jwt_identity()
-    if current_user is None:
-        return "Unauthorized", 403
-    
-    db_delete_account(user_id=current_user, account_id=id)
-    return jsonify({"result": "deleted"}), 200
+    try:
+        current_user = get_jwt_identity()
+        db_delete_account(user_id=current_user, account_id=id)
+        return jsonify({"result": "deleted"}), 200
+    except AccountNotFoundException:
+        return jsonify({"error": "Account not found"}), 404

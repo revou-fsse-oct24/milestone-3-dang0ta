@@ -28,7 +28,7 @@ def get_user(id:str) -> Optional[UserInformation]:
         statement = select(Users).where(Users.id.is_(id))
         user = db_session.scalars(statement=statement).one()
         return user.to_model()
-    except NoResultFound as e:
+    except NoResultFound:
         raise UserNotFoundException(id)
     
 def update_user(id: str, user: UserInformation) -> Optional[UserInformation]:

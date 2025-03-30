@@ -49,12 +49,9 @@ def handle_get_me():
     try:
         current_user = get_jwt_identity()
         user = db_get_user(current_user)
-        if user is None:
-            return "user not found", 404
-
         return jsonify(user.model_dump()), 200
     except UserNotFoundException as e:
-        return jsonify({"error": str(e)}), 404
+        return jsonify({"error": "user not found"}), 404
 
 
 def handle_update_me():

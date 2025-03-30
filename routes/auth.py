@@ -11,8 +11,16 @@ def auth_bp() -> Blueprint:
     def login():
         try:
             data = request.json
+            if not data:
+                return jsonify({"error": "Missing request body"}), 400
+                
             email = data.get("email")
             password = data.get("password")
+            
+            if not email:
+                return jsonify({"error": "Missing required field: email"}), 400
+            if not password:
+                return jsonify({"error": "Missing required field: password"}), 400
 
             user_id = get_and_compare_hash(email_address=email, password=password)
             if user_id is None:
@@ -21,21 +29,24 @@ def auth_bp() -> Blueprint:
             access_token = create_access_token(identity=user_id)
             refresh_token = create_refresh_token(identity=user_id)
             return jsonify({'access_token': access_token, 'refresh_token': refresh_token}), 200
-        except ValidationError as e:
-            return e.errors(), 400
         except WrongCredentialException as e:
-            # TODO: log the email
-            return str(e), 403
+            return jsonify({"error": str(e)}), 403
         except UserNotFoundException as e:
-            # TODO: log the email
-            return str(e), 403
+            return jsonify({"error": str(e)}), 403
         
     @bp.route('/refresh', methods=["POST"])
     def refresh():
-        token = request.json.get('refresh_token')
+        data = request.json
+        if not data:
+            return jsonify({"error": "Missing request body"}), 400
+            
+        token = data.get('refresh_token')
+        if not token:
+            return jsonify({"error": "Missing required field: refresh_token"}), 400
+            
         is_valid, payload = is_valid_token(token)
         if not is_valid or payload.get('type') != 'refresh':
-            return jsonify({'message': 'Invalid or expired refresh token'}), 401
+            return jsonify({"error": "Invalid or expired refresh token"}), 401
         
         new_access_token = create_access_token(identity=payload['sub'])
         return jsonify({'access_token': new_access_token}), 200

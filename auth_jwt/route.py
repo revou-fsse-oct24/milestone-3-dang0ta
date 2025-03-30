@@ -1,5 +1,5 @@
 from functools import wraps
-from flask import request
+from flask import request, jsonify
 from .tokens import is_valid_token
 from .blacklist import is_blacklisted
 from typing import Optional
@@ -24,14 +24,14 @@ def jwt_required(f):
     def decorator(*args, **kwargs):
         token = get_token()
         if token is None:
-            return "Unauthorized", 401
+            return jsonify({"error": "Unauthorized"}), 401
 
         if is_blacklisted(token):
-            return "Unauthorized", 401
+            return jsonify({"error": "Unauthorized"}), 401
         
         is_valid, payload = is_valid_token(token)
         if not is_valid:
-            return str(payload), 401
+            return jsonify({"error": str(payload)}), 401
         
         return f(*args, **kwargs)
     return decorator
