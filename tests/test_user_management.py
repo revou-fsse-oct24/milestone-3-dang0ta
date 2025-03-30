@@ -179,24 +179,54 @@ class TestUpdateCurrentUser:
         assert response_data["email_address"] == "bar@qux.com"
 
     def test_update_current_user_unauthenticated(self, client: Client):
+        """Test access denial for unauthenticated update requests.
+        
+        Verifies that:
+        1. The endpoint returns 401 status code when no authentication is provided
+        2. Unauthenticated users cannot update their profile
+        """
         response = client.put("/users/me", json={"name": "bar", "email_address": "bar@qux.com"})
         assert response.status_code == 401, response.get_data()
 
     def test_update_current_user_invalid_token(self, client: Client, access_token: str):
+        """Test access denial for update requests with invalid authentication token.
+        
+        Verifies that:
+        1. The endpoint returns 401 status code when an invalid token is provided
+        2. Users cannot update their profile with malformed or invalid tokens
+        """
         response = client.put("/users/me", headers={"Authorization": f"Bearer {access_token}123"}, json={"name": "bar", "email_address": "bar@qux.com"})
         assert response.status_code == 401, response.get_data()
 
     def test_update_current_user_missing_name(self, client: Client, access_token: str):
+        """Test validation when username is missing in update request.
+        
+        Verifies that:
+        1. The endpoint returns 400 status code when name is missing
+        2. The error message indicates missing username
+        """
         response = client.put("/users/me", headers={"Authorization": f"Bearer {access_token}"}, json={"email_address": "bar@qux.com"})
         assert response.status_code == 400, response.get_data()
         assert response.get_data() == b'{"error":"missing user name"}\n'
 
     def test_update_current_user_missing_email(self, client: Client, access_token: str):
+        """Test validation when email address is missing in update request.
+        
+        Verifies that:
+        1. The endpoint returns 400 status code when email is missing
+        2. The error message indicates missing email address
+        """
         response = client.put("/users/me", headers={"Authorization": f"Bearer {access_token}"}, json={"name": "bar"})
         assert response.status_code == 400, response.get_data()
         assert response.get_data() == b'{"error":"missing email address"}\n'
 
     def test_update_current_user_invalid_email(self, client: Client, access_token: str):
+        """Test validation when email address format is invalid in update request.
+        
+        Verifies that:
+        1. The endpoint returns 400 status code when email format is invalid
+        2. The error message indicates invalid email format
+        """
         response = client.put("/users/me", headers={"Authorization": f"Bearer {access_token}"}, json={"name": "bar", "email_address": "foobarqux"})
         assert response.status_code == 400, response.get_data()
         assert response.get_data() == b'{"error":"invalid email address"}\n'
