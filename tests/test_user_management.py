@@ -177,3 +177,11 @@ class TestUpdateCurrentUser:
         response_data = response.get_json()
         assert response_data["name"] == "bar"
         assert response_data["email_address"] == "bar@qux.com"
+
+    def test_update_current_user_unauthenticated(self, client: Client):
+        response = client.put("/users/me", json={"name": "bar", "email_address": "bar@qux.com"})
+        assert response.status_code == 401, response.get_data()
+
+    def test_update_current_user_invalid_token(self, client: Client, access_token: str):
+        response = client.put("/users/me", headers={"Authorization": f"Bearer {access_token}123"}, json={"name": "bar", "email_address": "bar@qux.com"})
+        assert response.status_code == 401, response.get_data()
