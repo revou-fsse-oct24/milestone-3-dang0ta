@@ -95,13 +95,20 @@ class TransactionEntries(Base):
         Enum(*get_args(TransactionEntryType), name="transaction_entry_type_enum")
     )
 
-    def to_model(self) -> TransactionModel:
-        return TransactionModel(
-            id=str(self.transaction.id),
+    def to_model(self, transaction: "Transactions", *, recipient_transaction: Optional["TransactionEntries"] = None) -> TransactionModel:
+        
+        model =  TransactionModel(
+            id=str(transaction.id),
             account_id=str(self.account_id),
-            transaction_type=self.transaction.transaction_type,
+            transaction_type=transaction.transaction_type,
             amount=self.amount,
+            timestamp=transaction.timestamp.isoformat(),
         )
+
+        if recipient_transaction is not None:
+            model.recipient_id = recipient_transaction.account_id
+
+        return model
 
 class Accounts(Base):
     """Represents a banking account in the system.
