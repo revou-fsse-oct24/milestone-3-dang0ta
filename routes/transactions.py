@@ -1,9 +1,10 @@
 from flask import Blueprint, request, jsonify
 from pydantic import ValidationError
 from auth_jwt import jwt_required, get_jwt_identity
-from db.transactions import withdraw, deposit, transfer, get_transactions as db_get_transactions, get_transaction as db_get_transaction, TransactionNotFoundException
-from db.accounts import AccountNotFoundException, AccountsNotFoundException
+from db.transactions import withdraw, deposit, transfer, get_transactions as db_get_transactions, get_transaction as db_get_transaction, TransactionNotFoundException, TransactionQuery
+from db.accounts import AccountsNotFoundException
 from models import Transaction, WithdrawRequest, DepositRequest, TransferRequest
+from typing import List
 
 def transaction_bp() -> Blueprint:
     bp = Blueprint("transactions", __name__, url_prefix="/transactions")
@@ -38,16 +39,14 @@ def transaction_bp() -> Blueprint:
         except ValidationError as e:
             return e.errors(), 400  
 
-    @bp.route("/")
+    @bp.route("/", methods=["GET"])
     @jwt_required
-    def handle_root_transaction():
+    def handle_get_transactions():
         try:
             current_user = get_jwt_identity()
-            if current_user == None:
-                return "Unauthorized", 401
-            
-            transactions = db_get_transactions(account_id=current_user)
-            return jsonify({"transactions": list(transactions)}), 200
+            query = parse_transaction_query()
+            transactions = db_get_transactions(query=query, current_user=current_user)
+            return jsonify({"transactions": [transaction.model_dump() for transaction in transactions]}), 200
         except ValidationError as e:
             return e.errors(), 400
         except AccountsNotFoundException as e:
@@ -86,3 +85,25 @@ def create_transaction():
                 return jsonify({"message": "invalid transaction type"}), 400
     except ValidationError as e:
         return e.errors(), 400
+    
+
+
+def parse_transaction_query() -> TransactionQuery:
+    account_id = request.args.get("account_id")
+    range_from = request.args.get("range_from")
+    range_to = request.args.get("range_to")
+    transaction_type = request.args.get("transaction_type")
+
+    transaction_types: List[str] | None = None
+    if transaction_type is not None:
+        split = transaction_type.split(",")
+
+        if len(split) > 0:
+            while "" in split:
+                split.remove("")
+
+        if len(split) > 0:
+            transaction_types = split
+    
+    
+    return TransactionQuery(account_id=account_id, range_from=range_from, range_to=range_to, transaction_type=transaction_types)
