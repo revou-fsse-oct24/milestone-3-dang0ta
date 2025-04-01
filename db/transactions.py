@@ -164,16 +164,13 @@ def get_transactions(query: TransactionQuery, current_user: str) -> List[Transac
             statement = statement.filter(Transactions.transaction_type.in_(query.transaction_type))
             
         transactions = db_session.execute(statement=statement.order_by(Transactions.timestamp.desc())).fetchall()
-        transaction_list: List[TransactionModel] = []
-        for transaction in transactions:
-            transaction_list.append(TransactionModel(
+        return [TransactionModel(
                 id=str(transaction[0]),
                 timestamp=transaction[1].isoformat(),
                 transaction_type=transaction[2],
                 amount=transaction[3],
                 account_id=str(transaction[5]),
-            ))
-        return transaction_list
+            ) for transaction in transactions]
     except NoResultFound:
         db_session.rollback()
         raise AccountsNotFoundException(user_id=current_user)
