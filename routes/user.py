@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from pydantic import ValidationError
 
-from models import UserCredential, UserInformation
+from models import UserCredential, UserInformation, CreateUserRequest
 from auth_jwt import jwt_required, get_jwt_identity
 from db.users import create_user as db_create_user
 from db.users import get_user as db_get_user
@@ -14,8 +14,8 @@ def user_bp()-> Blueprint:
     @bp.route("/", methods=["POST"])
     def create_user():
         try:
-            user = UserCredential(**request.get_json())
-            id = db_create_user(user=user)
+            req = CreateUserRequest(**request.get_json())
+            id = db_create_user(req)
             
             return jsonify({"id": id}), 201
         except ValidationError as e:
