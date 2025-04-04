@@ -2,6 +2,7 @@ from typing import List
 from flask.testing import FlaskClient
 from models import Transaction
 from pytest import fail
+from fixtures.transactions import deposit, withdraw, transfer
 
 class TestGetTransactions:
     def test_get_transactions(self, client: FlaskClient, deposit: Transaction, withdraw: Transaction, transfer: Transaction,  access_token: str):
