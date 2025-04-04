@@ -2,7 +2,8 @@ from werkzeug.test import Client
 from auth_jwt.tokens import create_access_token
 from db.users import create_user
 from auth_jwt.tokens import create_access_token
-from models import UserCredential
+from models import UserCredential, Account, UserInformation
+from typing import List
 
 class TestPostUsers:
     """Test suite for the user creation endpoint (POST /users/).
@@ -106,8 +107,21 @@ class TestPostUsers:
         response = client.get("/users/me", headers={"Authorization": f"Bearer {access_token}"})
         assert response.status_code == 200, response.get_data()
         response_data = response.get_json()
-        assert response_data["name"] == "foo"
-        assert response_data["email_address"] == "foo@bar.com"
+        user =  UserInformation(**response_data)
+        assert user.name == "foo"
+        assert user.email_address == "foo@bar.com"
+
+        response = client.get("/accounts", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
+        assert response.status_code == 200, response.get_data()
+        response_data = response.get_json()
+        assert "accounts" in response_data
+
+        # creating an user should also create a default account.
+        accounts = [Account(**raw) for raw in response_data["accounts"]]
+        assert len(accounts) == 1, f"expecting 1 account to exist, got {len(accounts)}"
+        account = accounts[0]
+        assert account.balance == 0
+        assert user.default_account_id == account.id
 
         response = client.get("/auth/logout", headers={"Authorization": f"Bearer {access_token}"})
         assert response.status_code == 200, response.get_data()
