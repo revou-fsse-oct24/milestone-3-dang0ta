@@ -112,8 +112,8 @@ def test_logout_success(app):
         access_token = create_access_token(identity="foo")
     
     response = client.get(
-        "/auth/logout",
-        json={"access_token": access_token}
+        "/auth/logout", 
+        headers={"Authorization": f"Bearer {access_token}"}
     )
     
     assert response.status_code == 200

@@ -1,12 +1,14 @@
-import sys
-from pathlib import Path
+from werkzeug.test import Client
+from flask import Flask
+from flask.testing import FlaskClient, FlaskCliRunner
 import pytest
 from app import create_app
 from models import UserCredential, Account, Transaction
 from db import Base, DB
+from typing import List, Generator
 
-@pytest.fixture()
-def app():
+@pytest.fixture
+def app() -> Generator[Flask, None, None]:
     app =  create_app()
     app.config.update()
 
@@ -14,29 +16,83 @@ def app():
     Base.metadata.drop_all(DB.get_engine())
 
 
-@pytest.fixture()
-def client(app):
+@pytest.fixture
+def client(app: Flask) -> FlaskClient:
     return app.test_client()
 
-@pytest.fixture()
-def runner(app):
+@pytest.fixture
+def runner(app: Flask) -> FlaskCliRunner:
     return app.test_cli_runner()
 
-@pytest.fixture()
-def test_user():
+@pytest.fixture
+def test_user() -> UserCredential:
     return UserCredential(name="test_user", email_address="test@example.com", password="password")
 
-@pytest.fixture()
-def test_account():
-    return Account(balance=1000)
+@pytest.fixture
+def test_user_2() -> UserCredential:
+    return UserCredential(name="test_user_2", email_address="test2@example.com", password="password")
 
-@pytest.fixture()
-def test_transaction():
-    return Transaction(
-        user_id="foo",
-        account_id="acc123",
-        transaction_type="deposit",
-        amount=500,
-        sender_account=None,
-        recipient_account=None
-    )
+
+def create_access_token(client: FlaskClient, credential: UserCredential) -> str:
+    response = client.post("/users/", json={"name": credential.name, "email_address": credential.email_address, "password": credential.password})
+    assert response.status_code == 201, response.get_data()
+
+    response_data = response.get_json()
+    assert response_data["id"] is not None
+
+    response = client.post("/auth/login", json={"email": credential.email_address, "password": credential.password})
+    assert response.status_code == 200, response.get_data()
+    response_data = response.get_json()
+    assert response_data["access_token"] is not None
+    assert response_data["refresh_token"] is not None
+
+    access_token = response_data["access_token"]
+    return access_token
+
+@pytest.fixture
+def access_token(client, test_user: UserCredential) -> str:
+    return create_access_token(client, test_user)
+
+@pytest.fixture
+def access_token_2(client, test_user_2: UserCredential) -> str:
+    return create_access_token(client, test_user_2)
+
+
+def create_account(client: FlaskClient, access_token: str, balance: int) -> Account:
+    response = client.post("/accounts/", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": balance})
+    assert response.status_code == 201, response.get_data()
+    response_json = response.get_json()
+    assert "account" in response_json
+    return Account(**response_json["account"])
+
+@pytest.fixture
+def account_1_1(client, access_token: str) -> Account:    
+    return create_account(client, access_token, 1000)
+
+@pytest.fixture
+def account_1_2(client, access_token: str) -> Account:    
+    return create_account(client, access_token, 1002)
+
+@pytest.fixture
+def account_2_1(client, access_token_2: str) -> Account:    
+    return create_account(client, access_token_2, 1003)
+
+@pytest.fixture
+def account_2_2(client, access_token_2: str) -> Account:    
+    return create_account(client, access_token_2, 1004)
+
+def create_account_id(client: FlaskClient, access_token: str, balance: int)-> str:
+    response = client.post("/accounts/", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": balance})
+    assert response.status_code == 201, response.get_data()
+    response_json = response.get_json()
+    assert "account" in response_json
+    account = Account(**response_json["account"])
+    return account.id
+
+@pytest.fixture
+def account_id(client: Client, access_token: str) -> str:
+    return create_account_id(client, access_token, 1000)
+
+@pytest.fixture
+def account_id_2(client: Client, access_token_2: str) -> str:
+    return create_account_id(client, access_token_2, 1001)

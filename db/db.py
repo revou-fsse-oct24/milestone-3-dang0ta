@@ -95,13 +95,20 @@ class TransactionEntries(Base):
         Enum(*get_args(TransactionEntryType), name="transaction_entry_type_enum")
     )
 
-    def to_model(self) -> TransactionModel:
-        return TransactionModel(
-            id=str(self.transaction.id),
+    def to_model(self, transaction: "Transactions", *, recipient_transaction: Optional["TransactionEntries"] = None) -> TransactionModel:
+        
+        model =  TransactionModel(
+            id=str(transaction.id),
             account_id=str(self.account_id),
-            transaction_type=self.transaction.transaction_type,
+            transaction_type=transaction.transaction_type,
             amount=self.amount,
+            timestamp=transaction.timestamp.isoformat(),
         )
+
+        if recipient_transaction is not None:
+            model.recipient_id = recipient_transaction.account_id
+
+        return model
 
 class Accounts(Base):
     """Represents a banking account in the system.
@@ -130,18 +137,27 @@ class Accounts(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    user: Mapped["Users"] = relationship(back_populates="accounts")
+    user: Mapped["Users"] = relationship(back_populates="accounts", foreign_keys=[user_id])
 
     balance: Mapped[int]
     transaction_entries: Mapped[List["TransactionEntries"]] =  relationship(
         back_populates="account", cascade="all, delete-orphan"
     )
 
+    #  TODO: test both of these timestamp attributes, ensure created_at only set once and never updated, while
+    # updated_at get updated on account change.
     created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     def to_model(self) -> AccountModel:
-        return AccountModel(balance=self.balance)
+        created_at, updated_at = self.created_at.isoformat(), self.updated_at.isoformat()
+        return AccountModel(
+            id=str(self.id),
+            user_id=str(self.user_id),
+            balance=self.balance,
+            created_at=created_at,
+            updated_at=updated_at,
+        )
     
     def update(self, account: AccountModel):
         self.balance = account.balance
@@ -180,10 +196,10 @@ class Users(Base):
     name: Mapped[str] = mapped_column(String(30))
     fullname: Mapped[Optional[str]]
 
-    accounts: Mapped[List["Accounts"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan"
-    )
+    default_account_id: Mapped[Optional[int]] = mapped_column(ForeignKey("accounts.id", use_alter=True))
+    default_account: Mapped["Accounts"] = relationship(foreign_keys=[default_account_id])
 
+    accounts: Mapped[list["Accounts"]] = relationship(back_populates="user", foreign_keys='Accounts.user_id')
     credential: Mapped["Credentials"] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
@@ -221,7 +237,7 @@ class Users(Base):
         return orm_account
     
     def to_model(self) -> UserInformation:
-        return UserInformation(name=self.name, fullname=self.fullname, email_address=self.email_address)
+        return UserInformation(name=self.name, fullname=self.fullname, email_address=self.email_address, default_account_id=str(self.default_account_id))
     
     def get_accounts(self) -> List[AccountModel]:
         accounts = []
@@ -253,7 +269,7 @@ class Credentials(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     user: Mapped["Users"] = relationship(back_populates="credential")
-    hash: Mapped[str]
+    hash: Mapped[bytes]
 
     created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
