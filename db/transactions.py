@@ -55,7 +55,6 @@ def deposit(account_id:str, amount:int) -> Optional[TransactionModel]:
         )
 
         account = db_session.scalars(statement=statement).one()
-        
         account.balance = account.balance + amount
         transaction = Transactions(
             transaction_type="deposit"

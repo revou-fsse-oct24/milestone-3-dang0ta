@@ -10,7 +10,7 @@ class TestGetAccounts:
     and invalid token scenarios.
     """
     
-    def test_get_current_user_accounts(self, client: Client, access_token: str, test_user_with_accounts: List[Account]):
+    def test_get_current_user_accounts(self, client: Client, access_token: str, account_1_1: Account, account_1_2: Account):
         """Test successful retrieval of current user's accounts.
         
         Args:
@@ -28,13 +28,15 @@ class TestGetAccounts:
         assert response.status_code == 200, response.get_data()
         response_data = response.get_json()
         assert "accounts" in response_data
-        assert len(response_data["accounts"]) == len(test_user_with_accounts)
-        print(f"response_data: {response_data}")
-        if len(response_data) == 1:
-            assert response_data["accounts"][0]["balance"] == test_user_with_accounts[0].balance
-        else:
-            for i in range(len(response_data)):
-                assert response_data["accounts"][i]["balance"] == test_user_with_accounts[i].balance
+        # there should be 3 accounts for the user, including the default account
+        assert len(response_data["accounts"]) == 3
+        accounts = [Account(**account) for account in response_data["accounts"]]
+        for account in accounts:
+            match account.id:
+                case account_1_1.id:
+                    assert account.balance == account_1_1.balance
+                case account_1_2.id:
+                    assert account.balance == account_1_2.balance
     
     def test_get_current_user_accounts_unauthorized(self, client: Client):
         """Test unauthorized access to get accounts.
@@ -69,8 +71,8 @@ class TestGetAccounts:
         assert response.status_code == 200, response.get_data()
         response_data = response.get_json()
         assert "accounts" in response_data
-        assert len(response_data["accounts"]) == 0
-        assert response_data["accounts"] == []
+        # the user should only have the default account
+        assert len(response_data["accounts"]) == 1
 
     def test_get_current_user_accounts_invalid_token(self, client: Client):
         """Test access with invalid JWT token.
@@ -98,19 +100,19 @@ class TestGetAccountById:
     and non-existent account scenarios.
     """
     
-    def test_get_account_by_id(self, client: Client, access_token: str, test_user_with_account_id: str):
+    def test_get_account_by_id(self, client: Client, access_token: str, account_id: str):
         """Test successful retrieval of account by ID.
         
         Args:
             client: Flask test client
             access_token: Valid JWT access token
-            test_user_with_account_id: ID of test account
+            account_id: ID of test account
             
         Verifies:
             - Response status code is 200
             - Response contains correct account balance
         """
-        response = client.get(f"/accounts/{test_user_with_account_id}", headers={"Authorization": f"Bearer {access_token}"})
+        response = client.get(f"/accounts/{account_id}", headers={"Authorization": f"Bearer {access_token}"})
         assert response.status_code == 200, response.get_data()
         response_data = response.get_json()
         assert "balance" in response_data
@@ -164,7 +166,7 @@ class TestGetAccountById:
             - Response contains error message
             - Error message indicates account not found
         """
-        response = client.get("/accounts/1", headers={"Authorization": f"Bearer {access_token}"})
+        response = client.get("/accounts/foobarqux", headers={"Authorization": f"Bearer {access_token}"})
         assert response.status_code == 404, response.get_data()
         response_json = response.get_json()
         assert "error" in response_json
@@ -193,7 +195,9 @@ class TestCreateAccount:
         response = client.post("/accounts/", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": 1000})
         assert response.status_code == 201, response.get_data()
         response_json = response.get_json()
-        assert "account_id" in response_json
+        assert "account" in response_json
+        account = Account(**response_json["account"])
+        assert account.id != "" and account.id is not None
 
     def test_create_account_unauthorized(self, client: Client):
         """Test unauthorized account creation.
@@ -248,7 +252,7 @@ class TestCreateAccount:
         response_json = response.get_json()
         assert "error" in response_json
         error = response_json["error"]
-        assert "invalid balance" in error, error
+        assert "invalid fields: balance" in error, error
 
 class TestUpdateAccount:
     """Test suite for PUT /accounts/<account_id> endpoint.
@@ -258,19 +262,37 @@ class TestUpdateAccount:
     invalid input data, and non-existent account scenarios.
     """
     
-    def test_update_account(self, client: Client, access_token: str, test_user_with_account_id: str):
+    def test_update_account(self, client: Client, access_token: str, account_id: str):
         """Test successful account update.
         
         Args:
             client: Flask test client
             access_token: Valid JWT access token
-            test_user_with_account_id: ID of test account
+            account_id: ID of test account
             
         Verifies:
             - Response status code is 200
             - Response contains updated balance
         """
-        response = client.put(f"/accounts/{test_user_with_account_id}", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": 2000})
+        response = client.put(f"/accounts/{account_id}", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": 2000})
+        assert response.status_code == 200, response.get_data()
+        response_json = response.get_json()
+        assert "balance" in response_json
+        assert response_json["balance"] == 2000
+
+    def test_update_default_account(self, client: Client, access_token: str):
+        """Test successful account update.
+        
+        Args:
+            client: Flask test client
+            access_token: Valid JWT access token
+            account_id: ID of test account
+            
+        Verifies:
+            - Response status code is 200
+            - Response contains updated balance
+        """
+        response = client.put(f"/accounts", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": 2000}, follow_redirects=True)
         assert response.status_code == 200, response.get_data()
         response_json = response.get_json()
         assert "balance" in response_json
@@ -343,7 +365,7 @@ class TestUpdateAccount:
             - Response contains error message
             - Error message indicates account not found
         """
-        response = client.put("/accounts/1", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": 2000})
+        response = client.put("/accounts/foobarqux", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": 2000})
         assert response.status_code == 404, response.get_data()
         response_json = response.get_json()
         assert "error" in response_json
@@ -358,19 +380,19 @@ class TestDeleteAccount:
     and non-existent account scenarios.
     """
     
-    def test_delete_account(self, client: Client, access_token: str, test_user_with_account_id: str):
+    def test_delete_account(self, client: Client, access_token: str, account_id: str):
         """Test successful account deletion.
         
         Args:
             client: Flask test client
             access_token: Valid JWT access token
-            test_user_with_account_id: ID of test account
+            account_id: ID of test account
             
         Verifies:
             - Response status code is 200
             - Response contains deletion confirmation
         """
-        response = client.delete(f"/accounts/{test_user_with_account_id}", headers={"Authorization": f"Bearer {access_token}"})
+        response = client.delete(f"/accounts/{account_id}", headers={"Authorization": f"Bearer {access_token}"})
         assert response.status_code == 200, response.get_data()
         response_json = response.get_json()
         assert "result" in response_json
@@ -424,7 +446,7 @@ class TestDeleteAccount:
             - Response contains error message
             - Error message indicates account not found
         """
-        response = client.delete("/accounts/1", headers={"Authorization": f"Bearer {access_token}"})
+        response = client.delete("/accounts/foobarqux", headers={"Authorization": f"Bearer {access_token}"})
         assert response.status_code == 404, response.get_data()
         response_json = response.get_json()
         assert "error" in response_json
