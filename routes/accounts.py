@@ -45,9 +45,6 @@ def accounts_bp():
 def get_accounts():
     try:
         current_user = get_jwt_identity()
-        if current_user is None:
-            return jsonify({"error": "Unauthorized"}), 401
-        
         acc = db_get_accounts(user_id=current_user)
         return jsonify({"accounts": [acc.model_dump() for acc in acc]}), 200
     except AccountsNotFoundException:

@@ -62,31 +62,6 @@ def transaction_bp() -> Blueprint:
     
     return bp
     
-    
-
-def create_transaction():
-    try:
-        current_user = get_jwt_identity()
-        if current_user == None:
-            return "Unauthorized",401
-        
-        transaction_request = Transaction(**request.get_json())
-        match transaction_request.transaction_type.lower():
-            case "withdraw":
-                transaction = withdraw(transaction_request.account_id, transaction_request.amount)
-                return jsonify({"transaction": transaction}), 200
-            case "deposit":
-                transaction = deposit(transaction_request.account_id, transaction_request.amount)
-                return jsonify({"transaction": transaction}), 200
-            case "transfer":
-                transaction = transfer(account_id=transaction_request.account_id, recipient_account_id=transaction_request.recipient_account_id, amount=transaction_request.amount)
-                return jsonify({"transaction": transaction}), 200
-            case _:
-                return jsonify({"message": "invalid transaction type"}), 400
-    except ValidationError as e:
-        return e.errors(), 400
-    
-
 
 def parse_transaction_query() -> TransactionQuery:
     account_id = request.args.get("account_id")

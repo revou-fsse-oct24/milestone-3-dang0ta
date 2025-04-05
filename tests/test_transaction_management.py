@@ -138,6 +138,9 @@ class TestGetTransactions:
         response = client.get("/transactions?transaction_type=withdraw,foo,deposit", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
         assert response.status_code == 400
 
+
+    
+
         
     
 
