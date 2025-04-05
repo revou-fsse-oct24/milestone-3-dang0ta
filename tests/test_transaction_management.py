@@ -6,6 +6,139 @@ from fixtures.transactions import deposit, withdraw, transfer, transactions
 from auth_jwt import create_access_token
 
 
+class TestWithdraw:
+    def test_ok(self, client: FlaskClient, access_token: str, account_id: str) -> Transaction:
+        response = client.post("/transactions/withdraw", headers={"Authorization": f"Bearer {access_token}"}, json={"amount": 101, "account_id": account_id})
+        assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "transaction" in response_json, f"invalid withdraw response, no key 'transaction' found"
+        Transaction(**response_json["transaction"])
+    
+    def test_not_found(self, client: FlaskClient, access_token: str) -> Transaction:
+        response = client.post("/transactions/withdraw", headers={"Authorization": f"Bearer {access_token}"}, json={"amount": 101, "account_id":"foo"})
+        assert response.status_code == 404
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "error" in response_json
+        assert "account not found" in response_json["error"]
+
+    def test_invalid_request(self, client: FlaskClient, access_token: str, account_id: str) -> Transaction:
+        response = client.post("/transactions/withdraw", headers={"Authorization": f"Bearer {access_token}"}, json={"amount":"foo", "account_id": account_id})
+        assert response.status_code == 400
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "error" in response_json
+        assert "invalid fields: amount" in response_json["error"]
+
+    def test_missing_amount(self, client: FlaskClient, access_token: str, account_id: str) -> Transaction:
+        response = client.post("/transactions/withdraw", headers={"Authorization": f"Bearer {access_token}"}, json={"account_id": account_id})
+        assert response.status_code == 400
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "error" in response_json
+        assert "invalid fields: amount" in response_json["error"]
+
+    # TODO: maybe use the default account in this case? 
+    def test_missing_account_id(self, client: FlaskClient, access_token: str, account_id: str) -> Transaction:
+        response = client.post("/transactions/withdraw", headers={"Authorization": f"Bearer {access_token}"}, json={"amount":100})
+        assert response.status_code == 400
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "error" in response_json
+        assert "invalid fields: account_id" in response_json["error"]
+
+class TestDeposit:
+    def test_ok(self, client: FlaskClient, access_token: str, account_id: str) -> Transaction:
+        response = client.post("/transactions/deposit", headers={"Authorization": f"Bearer {access_token}"}, json={"amount": 101, "account_id": account_id})
+        assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "transaction" in response_json, f"invalid withdraw response, no key 'transaction' found"
+        Transaction(**response_json["transaction"])
+    
+    def test_not_found(self, client: FlaskClient, access_token: str) -> Transaction:
+        response = client.post("/transactions/deposit", headers={"Authorization": f"Bearer {access_token}"}, json={"amount": 101, "account_id":"foo"})
+        assert response.status_code == 404
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "error" in response_json
+        assert "account not found" in response_json["error"]
+
+    def test_invalid_request(self, client: FlaskClient, access_token: str, account_id: str) -> Transaction:
+        response = client.post("/transactions/deposit", headers={"Authorization": f"Bearer {access_token}"}, json={"amount":"foo", "account_id": account_id})
+        assert response.status_code == 400
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "error" in response_json
+        assert "invalid fields: amount" in response_json["error"]
+
+    def test_missing_amount(self, client: FlaskClient, access_token: str, account_id: str) -> Transaction:
+        response = client.post("/transactions/deposit", headers={"Authorization": f"Bearer {access_token}"}, json={"account_id": account_id})
+        assert response.status_code == 400
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "error" in response_json
+        assert "invalid fields: amount" in response_json["error"]
+
+    # TODO: maybe use the default account in this case? 
+    def test_missing_account_id(self, client: FlaskClient, access_token: str, account_id: str) -> Transaction:
+        response = client.post("/transactions/deposit", headers={"Authorization": f"Bearer {access_token}"}, json={"amount":100})
+        assert response.status_code == 400
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "error" in response_json
+        assert "invalid fields: account_id" in response_json["error"]
+
+class TestTransfer:
+    def test_ok(self, client: FlaskClient, access_token: str, account_id: str, account_id_2: str) -> Transaction:
+        response = client.post("/transactions/transfer", headers={"Authorization": f"Bearer {access_token}"}, json={"amount": 101, "account_id": account_id, "recipient_account_id": account_id_2})
+        assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "transaction" in response_json, f"invalid withdraw response, no key 'transaction' found"
+        Transaction(**response_json["transaction"])
+    
+    def test_not_found_sender(self, client: FlaskClient, access_token: str, account_id_2: str) -> Transaction:
+        response = client.post("/transactions/transfer", headers={"Authorization": f"Bearer {access_token}"}, json={"amount": 101, "account_id":"foo", "recipient_account_id": account_id_2})
+        assert response.status_code == 404
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "error" in response_json
+        assert "account not found" in response_json["error"]
+    
+    def test_not_found_recipient(self, client: FlaskClient, access_token: str, account_id: str) -> Transaction:
+        response = client.post("/transactions/transfer", headers={"Authorization": f"Bearer {access_token}"}, json={"amount": 101, "account_id":account_id, "recipient_account_id": "foo"})
+        assert response.status_code == 404
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "error" in response_json
+        assert "account not found" in response_json["error"]
+
+    def test_invalid_request(self, client: FlaskClient, access_token: str, account_id: str, account_id_2: str) -> Transaction:
+        response = client.post("/transactions/transfer", headers={"Authorization": f"Bearer {access_token}"}, json={"amount":"foo", "account_id": account_id, "recipient_account_id": account_id_2})
+        assert response.status_code == 400
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "error" in response_json
+        assert "invalid fields: amount" in response_json["error"]
+
+    def test_missing_amount(self, client: FlaskClient, access_token: str, account_id: str, account_id_2: str) -> Transaction:
+        response = client.post("/transactions/transfer", headers={"Authorization": f"Bearer {access_token}"}, json={"account_id": account_id, "recipient_account_id": account_id_2})
+        assert response.status_code == 400
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "error" in response_json
+        assert "invalid fields: amount" in response_json["error"]
+
+    # TODO: maybe use the default account in this case? 
+    def test_missing_account_id(self, client: FlaskClient, access_token: str, account_id: str, account_id_2: str) -> Transaction:
+        response = client.post("/transactions/transfer", headers={"Authorization": f"Bearer {access_token}"}, json={"amount":100, "recipient_account_id": account_id_2})
+        assert response.status_code == 400
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "error" in response_json
+        assert "invalid fields: account_id" in response_json["error"]
 class TestGetTransactions:
     def test_get_transactions(self, client: FlaskClient, deposit: Transaction, withdraw: Transaction, transfer: Transaction,  access_token: str):
         response = client.get("/transactions", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
@@ -271,3 +404,11 @@ class TestGetTransaction:
         assert transaction.amount == transfer.amount
         assert transaction.recipient_id is transfer.recipient_id
         assert transaction.transaction_type == "transfer"
+
+    def test_get_nonexisting_transaction(self, client: FlaskClient, access_token: str):
+        response = client.get(f"/transactions/foo", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
+        assert response.status_code == 404
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "error" in response_json
+        assert "transaction not found" in response_json["error"]
