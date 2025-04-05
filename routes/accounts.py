@@ -44,7 +44,7 @@ def get_accounts():
         acc = db_get_accounts(user_id=current_user)
         return jsonify({"accounts": [acc.model_dump() for acc in acc]}), 200
     except AccountsNotFoundException:
-        return jsonify({"accounts": []}), 200
+        return jsonify({"error": "no account found for the user"}), 404
 
 def create_account():
     try:
