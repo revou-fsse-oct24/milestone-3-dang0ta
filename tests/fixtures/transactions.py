@@ -4,8 +4,9 @@ from flask.testing import FlaskClient, FlaskCliRunner
 import pytest
 from app import create_app
 from models import UserCredential, Account, Transaction
-from db import Base, DB
+from db import Base, DB, db_session, Transactions as TransactionDB, TransactionEntries
 from typing import List, Generator
+from datetime import datetime,timezone, timedelta
 
 @pytest.fixture
 def deposit(client: Client, access_token: str, account_id: str) -> Transaction:
@@ -30,3 +31,62 @@ def transfer(client: Client, access_token: str, access_token_2: str, account_id:
     response_json = response.get_json()
     assert "transaction" in response_json, f"invalid withdraw response, no key 'transaction' found"
     return Transaction(**response_json["transaction"])
+
+@pytest.fixture
+def transactions(client: Client, access_token:str, account_id: str) -> List[Transaction]:
+    now = datetime.now(tz=timezone.utc)
+    last_week, yesterday = now - timedelta(days=7), now - timedelta(days=1)
+
+    transactions = [
+        TransactionDB(
+            transaction_type="withdraw",
+            timestamp=last_week,
+        ),
+        TransactionDB(
+            transaction_type="withdraw",
+            timestamp=yesterday,
+        ),
+        TransactionDB(
+            transaction_type="withdraw",
+            timestamp=now,
+        ),
+    ]
+
+    db_session.add_all(transactions)
+    db_session.flush()
+
+    transaction_entries = [
+        TransactionEntries(
+            amount=100,
+            transaction_id=transactions[0].id,
+            account_id=account_id,
+            entry_type="debit"
+        ),
+        TransactionEntries(
+            amount=100,
+            transaction_id=transactions[1].id,
+            account_id=account_id,
+            entry_type="debit"
+        ),
+        TransactionEntries(
+            amount=100,
+            transaction_id=transactions[2].id,
+            account_id=account_id,
+            entry_type="debit"
+        )
+    ]
+
+    db_session.add_all(transaction_entries)
+    db_session.flush()
+    db_session.commit()
+
+    transaction_models = []
+    for i in range(len(transactions)):
+        transaction_models.append(Transaction(
+            id=str(transactions[i].id),
+            account_id=str(account_id),
+            transaction_type=transactions[i].transaction_type,
+            amount=transaction_entries[i].amount,
+            timestamp=transactions[i].timestamp.isoformat(),
+        ))
+    return transaction_models

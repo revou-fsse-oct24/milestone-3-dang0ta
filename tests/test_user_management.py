@@ -1,3 +1,4 @@
+from flask.testing import FlaskClient
 from werkzeug.test import Client
 from auth_jwt.tokens import create_access_token
 from db.users import create_user
@@ -171,6 +172,15 @@ class TestGetCurrentUser:
         response = client.get("/users/me", headers={"Authorization": f"Bearer {access_token}123"})
         assert response.status_code == 401, response.get_data()
 
+    def test_nonexisting_user(self, client: FlaskClient):
+        token = create_access_token(identity="foo")
+        response = client.get("/users/me", headers={"Authorization": f"bearer {token}"})
+        assert response.status_code == 404
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "error" in response_json
+        assert "user not found" in response_json["error"]
+
 class TestUpdateCurrentUser:
     """Test suite for the current user update endpoint (PUT /users/me).
     
@@ -244,6 +254,15 @@ class TestUpdateCurrentUser:
         response = client.put("/users/me", headers={"Authorization": f"Bearer {access_token}"}, json={"name": "bar", "email_address": "foobarqux"})
         assert response.status_code == 400, response.get_data()
         assert response.get_data() == b'{"error":"invalid email address"}\n'
+
+    def test_update_nonexisting_user(self, client: FlaskClient):
+        token = create_access_token(identity="foo")
+        response = client.put("/users/me", headers={"Authorization": f"bearer {token}"}, json={"name": "bar", "email_address": "bar@qux.com"})
+        assert response.status_code == 404
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "error" in response_json
+        assert "user not found" in response_json["error"]
         
         
         

@@ -24,9 +24,11 @@ def jwt_required(f):
     def decorator(*args, **kwargs):
         token = get_token()
         if token is None:
+            print("none token")
             return jsonify({"error": "Unauthorized"}), 401
 
         if is_blacklisted(token):
+            print("blacklisted token")
             return jsonify({"error": "Unauthorized"}), 401
         
         is_valid, payload = is_valid_token(token)

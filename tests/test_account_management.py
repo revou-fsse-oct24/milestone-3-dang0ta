@@ -1,6 +1,7 @@
 from werkzeug import Client
 from typing import List
 from models import Account
+from auth_jwt import create_access_token
 
 class TestGetAccounts:
     """Test suite for GET /accounts/ endpoint.
@@ -56,7 +57,7 @@ class TestGetAccounts:
         error = response_json["error"]
         assert "Unauthorized" in error, error
 
-    def test_get_current_user_accounts_no_accounts(self, client: Client, access_token: str):
+    def test_get_accounts_nonexisting_user(self, client: Client, access_token: str):
         """Test retrieval when user has no accounts.
         
         Args:
@@ -67,12 +68,12 @@ class TestGetAccounts:
             - Response status code is 200
             - Response contains empty accounts list
         """
-        response = client.get("/accounts/", headers={"Authorization": f"Bearer {access_token}"})
-        assert response.status_code == 200, response.get_data()
+        token = create_access_token(identity="foo")
+        response = client.get("/accounts/", headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 404, response.get_data()
         response_data = response.get_json()
-        assert "accounts" in response_data
-        # the user should only have the default account
-        assert len(response_data["accounts"]) == 1
+        assert "error" in response_data
+        assert "no account found for the user" in response_data["error"]
 
     def test_get_current_user_accounts_invalid_token(self, client: Client):
         """Test access with invalid JWT token.
@@ -297,6 +298,61 @@ class TestUpdateAccount:
         response_json = response.get_json()
         assert "balance" in response_json
         assert response_json["balance"] == 2000
+
+    def test_update_default_account_unauthorized(self, client: Client):
+        """Test unauthorized account update.
+        
+        Args:
+            client: Flask test client
+            
+        Verifies:
+            - Response status code is 401
+            - Response contains error message
+            - Error message indicates unauthorized access
+        """
+        response = client.put("/accounts", json={"balance": 2000}, follow_redirects=True)
+        assert response.status_code == 401, response.get_data()
+        response_json = response.get_json()
+        assert "error" in response_json
+        error = response_json["error"]
+        assert "Unauthorized" in error, error
+
+    def test_update_default_account_invalid_token(self, client: Client):
+        """Test account update with invalid JWT token.
+        
+        Args:
+            client: Flask test client
+            
+        Verifies:
+            - Response status code is 401
+            - Response contains error message
+            - Error message indicates invalid token
+        """
+        response = client.put("/accounts", headers={"Authorization": "Bearer invalid_token"}, json={"balance": 2000}, follow_redirects=True)
+        assert response.status_code == 401, response.get_data()
+        response_json = response.get_json()
+        assert "error" in response_json
+        error = response_json["error"]
+        assert "Invalid Token" in error, error
+
+    def test_update_default_account_invalid_json(self, client: Client, access_token: str):
+        """Test account update with invalid input data.
+        
+        Args:
+            client: Flask test client
+            access_token: Valid JWT access token
+            
+        Verifies:
+            - Response status code is 400
+            - Response contains error message
+            - Error message indicates invalid balance
+        """
+        response = client.put("/accounts", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": "invalid"}, follow_redirects=True)
+        assert response.status_code == 400, response.get_data()
+        response_json = response.get_json()
+        assert "error" in response_json
+        error = response_json["error"]
+        assert "invalid balance" in error, error
 
     def test_update_account_unauthorized(self, client: Client):
         """Test unauthorized account update.

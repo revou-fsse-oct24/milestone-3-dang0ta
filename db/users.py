@@ -38,9 +38,6 @@ def create_user(request: CreateUserRequest) -> str:
 
         db_session.commit()
         return user.id
-    except NoResultFound as e:
-        db_session.rollback()
-        raise UserNotFoundException(id)
     except Exception as e:
         db_session.rollback()
         raise e
@@ -57,9 +54,6 @@ def update_user(id: str, user: UserInformation) -> Optional[UserInformation]:
     try:
         statement = select(Users).where(Users.id.is_(id))
         existing = db_session.scalars(statement=statement).one()
-        if existing is None:
-            return None
-        
         existing.update(user)
         db_session.commit()
         return existing.to_model()

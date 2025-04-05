@@ -24,8 +24,6 @@ def accounts_bp():
                 return create_account()
             case "PUT": 
                 return update_default_account()
-            case _:
-                return jsonify({"error": "Method not allowed"}), 405
     
     @bp.route("/<string:id>", methods=["GET", "PUT", "DELETE"])
     @jwt_required
@@ -37,21 +35,16 @@ def accounts_bp():
                 return update_account(id)
             case "DELETE":
                 return delete_account(id)
-            case _:
-                return jsonify({"error": "Method not allowed"}), 405
     
     return bp
 
 def get_accounts():
     try:
         current_user = get_jwt_identity()
-        if current_user is None:
-            return jsonify({"error": "Unauthorized"}), 401
-        
         acc = db_get_accounts(user_id=current_user)
         return jsonify({"accounts": [acc.model_dump() for acc in acc]}), 200
     except AccountsNotFoundException:
-        return jsonify({"accounts": []}), 200
+        return jsonify({"error": "no account found for the user"}), 404
 
 def create_account():
     try:
@@ -99,10 +92,6 @@ def update_account(id: str):
         return jsonify({"error": "Account not found"}), 404
     except AccountsNotFoundException:
         return jsonify({"error": "Account not found"}), 404
-    except KeyError as e:
-        return jsonify({"error": str(e)}), 400
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
     
 def update_default_account():
     try:
@@ -118,15 +107,8 @@ def update_default_account():
         error = errors[0]
         field = error.get("loc", [])[0] if error.get("loc") else "unknown"
         return jsonify({"error": f"invalid {field}"}), 400
-
-    except AccountNotFoundException:
-        return jsonify({"error": "Account not found"}), 404
     except AccountsNotFoundException:
         return jsonify({"error": "Account not found"}), 404
-    except KeyError as e:
-        return jsonify({"error": str(e)}), 400
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
     
 def delete_account(id:str):
     try:
