@@ -232,8 +232,42 @@ class TestGetTransactions:
         assert len(response_json["transactions"]) == 1
             
         
-    
+class TestGetTransaction:
+    def test_get_existing_withdraw(self, client: FlaskClient, access_token: str, withdraw: Transaction):
+        response = client.get(f"/transactions/{withdraw.id}", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
+        assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "transaction" in response_json
+        transaction = Transaction(**response_json["transaction"])
+        assert transaction.id == withdraw.id
+        assert transaction.account_id == withdraw.account_id
+        assert transaction.amount == withdraw.amount
+        assert transaction.recipient_id is None
+        assert transaction.transaction_type == "withdraw"
 
-        
-    
+    def test_get_existing_deposit(self, client: FlaskClient, access_token: str, deposit: Transaction):
+        response = client.get(f"/transactions/{deposit.id}", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
+        assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "transaction" in response_json
+        transaction = Transaction(**response_json["transaction"])
+        assert transaction.id == deposit.id
+        assert transaction.account_id == deposit.account_id
+        assert transaction.amount == deposit.amount
+        assert transaction.recipient_id is None
+        assert transaction.transaction_type == "deposit"
 
+    def test_get_existing_transfer(self, client: FlaskClient, access_token: str, transfer: Transaction):
+        response = client.get(f"/transactions/{transfer.id}", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
+        assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "transaction" in response_json
+        transaction = Transaction(**response_json["transaction"])
+        assert transaction.id == transfer.id
+        assert transaction.account_id == transfer.account_id
+        assert transaction.amount == transfer.amount
+        assert transaction.recipient_id is transfer.recipient_id
+        assert transaction.transaction_type == "transfer"

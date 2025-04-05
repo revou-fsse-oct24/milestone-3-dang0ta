@@ -4,6 +4,7 @@ from models import Transaction as TransactionModel, TransactionTypes
 from .accounts import AccountNotFoundException, AccountsNotFoundException
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
+from sqlalchemy.orm import selectinload 
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -87,6 +88,9 @@ def transfer(sender_account_id: str, recipient_account_id: str, amount: int) -> 
             .where(Accounts.id.is_(sender_account_id))
         )).one()
 
+        if not sender_account:
+            raise AccountNotFoundException(account_id=sender_account_id)
+
         sender_account.balance = sender_account.balance - amount
 
         recipient_account = db_session.scalars(statement=(
@@ -94,35 +98,42 @@ def transfer(sender_account_id: str, recipient_account_id: str, amount: int) -> 
             .where(Accounts.id.is_(recipient_account_id))
         )).one()
 
+        if not recipient_account:
+            raise AccountNotFoundException(account_id=recipient_account_id)
+
         recipient_account.balance = recipient_account.balance + amount
 
         transaction = Transactions(
             transaction_type="transfer"
         )
+        db_session.add(transaction)
+        db_session.flush()
 
         sender_entry = TransactionEntries(
             transaction_id = transaction.id,
-            transaction = transaction,
-            account_id = sender_account_id,
-            account = sender_account,
+            account_id = sender_account.id,
             entry_type = "debit",
             amount = amount
         )
 
         recipient_entry = TransactionEntries(
             transaction_id = transaction.id,
-            transaction = transaction,
-            account_id = recipient_account_id,
-            account = recipient_account,
+            account_id = recipient_account.id,
             entry_type = "credit",
             amount = amount
         )
 
-        db_session.add(transaction)
         db_session.add(sender_entry)
         db_session.add(recipient_entry)
         db_session.commit()
-        return sender_entry.to_model(transaction)
+        return TransactionModel(
+            id=str(transaction.id),
+            account_id=str(sender_account_id),
+            transaction_type=transaction.transaction_type,
+            amount=sender_entry.amount,
+            timestamp=transaction.timestamp.isoformat(),
+            recipient_id=str(recipient_entry.account_id)
+        )
     except NoResultFound as e:
         db_session.rollback()
         raise AccountNotFoundException(account_id=sender_account_id)
@@ -139,19 +150,16 @@ class TransactionQuery(BaseModel):
     
 def get_transactions(query: TransactionQuery, current_user: str) -> List[TransactionModel]:
     try:
-        statement = (
+
+        statement= (
             select(
-                Transactions.id, 
-                Transactions.timestamp, 
-                Transactions.transaction_type, 
-                TransactionEntries.amount, 
-                TransactionEntries.entry_type,
-                Accounts.id)
-            .select_from(Accounts)
-            .where(Accounts.user_id.is_(current_user))
-            .join(TransactionEntries)
-            .join(Transactions)
+                Transactions
             )
+            .select_from(TransactionEntries)
+            .join(Accounts)
+            .join(Transactions)
+            .where(Accounts.user_id.is_(current_user))
+        )
         
         if query.account_id is not None:
             statement = statement.filter(Accounts.id.is_(query.account_id))
@@ -162,14 +170,43 @@ def get_transactions(query: TransactionQuery, current_user: str) -> List[Transac
         if query.transaction_type is not None:
             statement = statement.filter(Transactions.transaction_type.in_(query.transaction_type))
             
-        transactions = db_session.execute(statement=statement.order_by(Transactions.timestamp.desc())).fetchall()
-        return [TransactionModel(
-                id=str(transaction[0]),
-                timestamp=transaction[1].isoformat(),
-                transaction_type=transaction[2],
-                amount=transaction[3],
-                account_id=str(transaction[5]),
-            ) for transaction in transactions]
+        # transactions = db_session.execute(statement=statement.order_by(Transactions.timestamp.desc())).fetchall()
+        result = db_session.scalars(statement=statement).all()
+        transactions: List[TransactionModel] = []
+        for transaction in result:
+            if len(transaction.entries) == 0:
+                # TODO: maybe we should log this out?
+                continue
+
+            if transaction.transaction_type is not "transfer":
+                entry = transaction.entries[0]
+                transactions.append(TransactionModel(
+                    id=str(transaction.id),
+                    account_id=str(entry.account_id),
+                    transaction_type=transaction.transaction_type,
+                    amount=entry.amount,
+                    timestamp=transaction.timestamp.isoformat(),                    
+                ))
+                continue
+            
+            if len(transaction.entries) < 2:
+                # TODO: maybe we should log this out?
+                continue
+                
+            sender, recipient = transaction.entries[0], transaction.entries[1]
+            if sender.entry_type == "credit":
+                sender, recipient = transaction.entries[1], transaction.entries[0]
+            
+            transactions.append(TransactionModel(
+                id=str(transaction.id),
+                account_id=str(sender.account_id),
+                transaction_type=transaction.transaction_type,
+                amount=sender.amount,
+                timestamp=transaction.timestamp.isoformat(), 
+                recipient_id=str(recipient.account_id)
+            ))
+
+        return transactions
     except Exception as e:
         db_session.rollback()
         raise e
@@ -177,13 +214,47 @@ def get_transactions(query: TransactionQuery, current_user: str) -> List[Transac
 def get_transaction(transaction_id:str) -> Optional[TransactionModel]:
     try:
 
-        entry = db_session.scalars(statement=(
-            select(TransactionEntries)
-            .where(TransactionEntries.transaction_id.is_(transaction_id))
+        transaction = db_session.scalars(statement=(
+            select(Transactions)
+            .filter_by(id=transaction_id)            
         )).one()
-    
 
-        return entry.to_model()
+        if not transaction:
+            raise TransactionNotFoundException(transaction_id=transaction_id)
+        
+        entries = db_session.scalars(
+            select(TransactionEntries).where(TransactionEntries.transaction_id.is_(transaction.id))
+        ).all()
+
+        if not entries or len(entries) == 0:
+            raise TransactionNotFoundException(transaction_id=transaction_id)
+
+        if len(entries) == 1:
+            entry = entries[0]
+            return TransactionModel(
+                id=str(transaction.id),
+                account_id=str(entry.account_id),
+                transaction_type=transaction.transaction_type,
+                amount=entry.amount,
+                timestamp=transaction.timestamp.isoformat(),                
+            )
+
+        sender, recipient = entries[0], entries[1]
+        if sender.entry_type == "credit":
+            sender, recipient = entries[1], entries[0]
+        
+        return TransactionModel(
+            id=str(transaction.id),
+            account_id=str(sender.account_id),
+            transaction_type=transaction.transaction_type,
+            amount=recipient.amount,
+            timestamp=transaction.timestamp.isoformat(),    
+            recipient_id=str(recipient.account_id)
+        )
+
     except NoResultFound:
         db_session.rollback()
         raise TransactionNotFoundException(transaction_id=transaction_id)
+    except Exception as e:
+        db_session.rollback()
+        raise e
