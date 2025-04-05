@@ -298,6 +298,61 @@ class TestUpdateAccount:
         assert "balance" in response_json
         assert response_json["balance"] == 2000
 
+    def test_update_default_account_unauthorized(self, client: Client):
+        """Test unauthorized account update.
+        
+        Args:
+            client: Flask test client
+            
+        Verifies:
+            - Response status code is 401
+            - Response contains error message
+            - Error message indicates unauthorized access
+        """
+        response = client.put("/accounts", json={"balance": 2000}, follow_redirects=True)
+        assert response.status_code == 401, response.get_data()
+        response_json = response.get_json()
+        assert "error" in response_json
+        error = response_json["error"]
+        assert "Unauthorized" in error, error
+
+    def test_update_default_account_invalid_token(self, client: Client):
+        """Test account update with invalid JWT token.
+        
+        Args:
+            client: Flask test client
+            
+        Verifies:
+            - Response status code is 401
+            - Response contains error message
+            - Error message indicates invalid token
+        """
+        response = client.put("/accounts", headers={"Authorization": "Bearer invalid_token"}, json={"balance": 2000}, follow_redirects=True)
+        assert response.status_code == 401, response.get_data()
+        response_json = response.get_json()
+        assert "error" in response_json
+        error = response_json["error"]
+        assert "Invalid Token" in error, error
+
+    def test_update_default_account_invalid_json(self, client: Client, access_token: str):
+        """Test account update with invalid input data.
+        
+        Args:
+            client: Flask test client
+            access_token: Valid JWT access token
+            
+        Verifies:
+            - Response status code is 400
+            - Response contains error message
+            - Error message indicates invalid balance
+        """
+        response = client.put("/accounts", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": "invalid"}, follow_redirects=True)
+        assert response.status_code == 400, response.get_data()
+        response_json = response.get_json()
+        assert "error" in response_json
+        error = response_json["error"]
+        assert "invalid balance" in error, error
+
     def test_update_account_unauthorized(self, client: Client):
         """Test unauthorized account update.
         

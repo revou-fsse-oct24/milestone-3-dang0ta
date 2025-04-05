@@ -5,6 +5,7 @@ from pytest import fail
 from fixtures.transactions import deposit, withdraw, transfer, transactions
 from auth_jwt import create_access_token
 
+
 class TestGetTransactions:
     def test_get_transactions(self, client: FlaskClient, deposit: Transaction, withdraw: Transaction, transfer: Transaction,  access_token: str):
         response = client.get("/transactions", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
@@ -230,8 +231,7 @@ class TestGetTransactions:
         response_json = response.get_json()
         assert "transactions" in response_json
         assert len(response_json["transactions"]) == 1
-            
-        
+                 
 class TestGetTransaction:
     def test_get_existing_withdraw(self, client: FlaskClient, access_token: str, withdraw: Transaction):
         response = client.get(f"/transactions/{withdraw.id}", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
