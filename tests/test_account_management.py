@@ -1,6 +1,7 @@
 from werkzeug import Client
 from typing import List
 from models import Account
+from auth_jwt import create_access_token
 
 class TestGetAccounts:
     """Test suite for GET /accounts/ endpoint.
@@ -56,7 +57,7 @@ class TestGetAccounts:
         error = response_json["error"]
         assert "Unauthorized" in error, error
 
-    def test_get_current_user_accounts_no_accounts(self, client: Client, access_token: str):
+    def test_get_accounts_nonexisting_user(self, client: Client, access_token: str):
         """Test retrieval when user has no accounts.
         
         Args:
@@ -67,12 +68,12 @@ class TestGetAccounts:
             - Response status code is 200
             - Response contains empty accounts list
         """
-        response = client.get("/accounts/", headers={"Authorization": f"Bearer {access_token}"})
-        assert response.status_code == 200, response.get_data()
+        token = create_access_token(identity="foo")
+        response = client.get("/accounts/", headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 404, response.get_data()
         response_data = response.get_json()
-        assert "accounts" in response_data
-        # the user should only have the default account
-        assert len(response_data["accounts"]) == 1
+        assert "error" in response_data
+        assert "no account found for the user" in response_data["error"]
 
     def test_get_current_user_accounts_invalid_token(self, client: Client):
         """Test access with invalid JWT token.
