@@ -1,8 +1,9 @@
 from typing import List
 from flask.testing import FlaskClient
-from models import Transaction
+from models import Transaction, Account
 from pytest import fail
-from fixtures.transactions import deposit, withdraw, transfer
+from fixtures.transactions import deposit, withdraw, transfer, transactions
+from auth_jwt import create_access_token
 
 class TestGetTransactions:
     def test_get_transactions(self, client: FlaskClient, deposit: Transaction, withdraw: Transaction, transfer: Transaction,  access_token: str):
@@ -139,6 +140,98 @@ class TestGetTransactions:
         assert response.status_code == 400
 
 
+    def test_query_by_account_id(self, client: FlaskClient, access_token:str, withdraw: Transaction):
+        response = client.get(f"/transactions?account_id={withdraw.account_id}", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
+        assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "transactions" in response_json
+        transactions = [Transaction(**transaction) for transaction in response_json["transactions"]]
+        assert len(transactions) == 1
+        transaction = transactions[0]
+        assert transaction.account_id == withdraw.account_id
+        assert transaction.amount == withdraw.amount
+
+    def test_query_by_nonexisting_account_id(self, client: FlaskClient, access_token: str):
+        response = client.get("/transactions?account_id=foo", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
+        assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "transactions" in  response_json
+        assert len(response_json["transactions"]) == 0
+
+    def test_query_by_range(self, client: FlaskClient, access_token: str, transactions: List[Transaction]):
+        response = client.get(f"/transactions?range_from={transactions[0].timestamp.isoformat()}", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
+        assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "transactions" in response_json
+        assert len(response_json["transactions"]) == 3
+
+        response = client.get(f"/transactions?range_from={transactions[1].timestamp.isoformat()}", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
+        assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "transactions" in response_json
+        assert len(response_json["transactions"]) == 2
+
+        response = client.get(f"/transactions?range_from={transactions[2].timestamp.isoformat()}", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
+        assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "transactions" in response_json
+        assert len(response_json["transactions"]) == 1
+
+        response = client.get(f"/transactions?range_to={transactions[2].timestamp.isoformat()}", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
+        assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "transactions" in response_json
+        assert len(response_json["transactions"]) == 3
+
+        response = client.get(f"/transactions?range_to={transactions[1].timestamp.isoformat()}", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
+        assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "transactions" in response_json
+        assert len(response_json["transactions"]) == 2
+
+        response = client.get(f"/transactions?range_to={transactions[0].timestamp.isoformat()}", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
+        assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "transactions" in response_json
+        assert len(response_json["transactions"]) == 1
+
+        response = client.get(f"/transactions?range_from={transactions[0].timestamp.isoformat()}&&range_to={transactions[2].timestamp.isoformat()}", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
+        assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "transactions" in response_json
+        assert len(response_json["transactions"]) == 3
+
+        response = client.get(f"/transactions?range_from={transactions[1].timestamp.isoformat()}&&range_to={transactions[2].timestamp.isoformat()}", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
+        assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "transactions" in response_json
+        assert len(response_json["transactions"]) == 2
+
+        response = client.get(f"/transactions?range_from={transactions[0].timestamp.isoformat()}&&range_to={transactions[1].timestamp.isoformat()}", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
+        assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "transactions" in response_json
+        assert len(response_json["transactions"]) == 2
+
+        response = client.get(f"/transactions?range_from={transactions[0].timestamp.isoformat()}&&range_to={transactions[0].timestamp.isoformat()}", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
+        assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "transactions" in response_json
+        assert len(response_json["transactions"]) == 1
+            
+        
     
 
         

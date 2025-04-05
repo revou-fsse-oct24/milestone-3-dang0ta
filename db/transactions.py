@@ -147,10 +147,10 @@ def get_transactions(query: TransactionQuery, current_user: str) -> List[Transac
                 TransactionEntries.amount, 
                 TransactionEntries.entry_type,
                 Accounts.id)
-            .select_from(Transactions)
+            .select_from(Accounts)
+            .where(Accounts.user_id.is_(current_user))
             .join(TransactionEntries)
-            .join(Accounts)
-            .filter(Accounts.user_id.is_(current_user))
+            .join(Transactions)
             )
         
         if query.account_id is not None:
@@ -170,9 +170,6 @@ def get_transactions(query: TransactionQuery, current_user: str) -> List[Transac
                 amount=transaction[3],
                 account_id=str(transaction[5]),
             ) for transaction in transactions]
-    except NoResultFound:
-        db_session.rollback()
-        raise AccountsNotFoundException(user_id=current_user)
     except Exception as e:
         db_session.rollback()
         raise e
