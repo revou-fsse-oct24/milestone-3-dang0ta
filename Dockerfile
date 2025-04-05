@@ -29,4 +29,4 @@ ENV PATH="/app/.venv/bin:$PATH"
 EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=3s CMD curl -f http://localhost:5000/ || exit 1
 
-CMD ["gunicorn", "--chdir", "/app", "-b", "0.0.0.0:5000", "app:create_app"]
+CMD ["gunicorn", "--chdir", "/app", "-b", "0.0.0.0:5000", "app:create_app()"]

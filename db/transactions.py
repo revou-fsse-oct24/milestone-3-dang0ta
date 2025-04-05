@@ -178,7 +178,7 @@ def get_transactions(query: TransactionQuery, current_user: str) -> List[Transac
                 # TODO: maybe we should log this out?
                 continue
 
-            if transaction.transaction_type is not "transfer":
+            if transaction.transaction_type != "transfer":
                 entry = transaction.entries[0]
                 transactions.append(TransactionModel(
                     id=str(transaction.id),
