@@ -9,6 +9,7 @@ def test_login_success(client, app, test_user):
     )
     
     assert response.status_code == 200
+    assert "application/json" in response.headers.get("content-type")
     data = response.get_json()
     assert "access_token" in data
     assert "refresh_token" in data
@@ -71,6 +72,7 @@ def test_refresh_token_success(app):
     )
     
     assert response.status_code == 200
+    assert "application/json" in response.headers.get("content-type")
     data = response.get_json()
     assert "access_token" in data
     
@@ -117,6 +119,7 @@ def test_logout_success(app):
     )
     
     assert response.status_code == 200
+    assert "application/json" in response.headers.get("content-type")
     data = response.get_json()
     assert "message" in data
     assert "success" in data["message"].lower()
