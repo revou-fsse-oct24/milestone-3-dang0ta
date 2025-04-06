@@ -1,3 +1,4 @@
+import uuid
 import os
 import bcrypt
 from typing import Optional, List, get_args, Literal
@@ -56,6 +57,7 @@ class Transactions(Base):
     transaction_type: Mapped[TransactionType] = mapped_column(
         Enum(*get_args(TransactionType), name="transaction_type_enum")
     )
+    description: Mapped[Optional[str]] = mapped_column(String(256))
     entries: Mapped[List["TransactionEntries"]] = relationship(
         back_populates="transaction", cascade="all, delete-orphan"
     )
@@ -138,6 +140,8 @@ class Accounts(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     user: Mapped["Users"] = relationship(back_populates="accounts", foreign_keys=[user_id])
+    account_type: Mapped[str] = mapped_column(String(30), default="saving")
+    account_number: Mapped[str] = mapped_column(String(30), default=lambda: str(uuid.uuid4()))
 
     balance: Mapped[int]
     transaction_entries: Mapped[List["TransactionEntries"]] =  relationship(
@@ -163,7 +167,7 @@ class Accounts(Base):
         self.balance = account.balance
 
     def __repr__(self) -> str:
-        return f"Account(id={self.id!r}, user_id={self.user_id!r}, username={self.user.name!r}, balance={self.balance!r})"
+        return f"Account(id={self.id!r}, user_id={self.user_id!r}, username={self.user.username!r}, balance={self.balance!r})"
 
 class Users(Base):
     """Represents a user in the RevoBank system.
@@ -193,7 +197,7 @@ class Users(Base):
     """
     __tablename__ = "users"
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(30))
+    username: Mapped[str] = mapped_column(String(30))
     fullname: Mapped[Optional[str]]
 
     default_account_id: Mapped[Optional[int]] = mapped_column(ForeignKey("accounts.id", use_alter=True))
@@ -204,12 +208,12 @@ class Users(Base):
         back_populates="user", cascade="all, delete-orphan"
     )
 
-    email_address: Mapped[str]
+    email: Mapped[str]
     created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     def __repr__(self) -> str:
-        return f"User(id={self.id!r}, name={self.name!r}, fullname={self.fullname!r})"
+        return f"User(id={self.id!r}, name={self.username!r}, fullname={self.fullname!r})"
     
     def from_model(self, user: UserCredential):
         self.credential = Credentials(
@@ -223,9 +227,9 @@ class Users(Base):
         return self
     
     def update(self, user: UserInformation):
-        self.name = user.name
+        self.username = user.name
         self.fullname = user.fullname
-        self.email_address = user.email_address
+        self.email = user.email_address
 
     def add_account(self, account: AccountModel) -> Accounts:
         orm_account = Accounts(
@@ -237,7 +241,7 @@ class Users(Base):
         return orm_account
     
     def to_model(self) -> UserInformation:
-        return UserInformation(name=self.name, fullname=self.fullname, email_address=self.email_address, default_account_id=str(self.default_account_id))
+        return UserInformation(name=self.username, fullname=self.fullname, email_address=self.email, default_account_id=str(self.default_account_id))
     
     def get_accounts(self) -> List[AccountModel]:
         accounts = []
@@ -275,7 +279,7 @@ class Credentials(Base):
     updated_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     def __repr__(self) -> str:
-        return f"Credential(id={self.id!r}, user_id={self.user_id!r}, username={self.user.name!r}, hash={self.hash!r})"
+        return f"Credential(id={self.id!r}, user_id={self.user_id!r}, username={self.user.username!r}, hash={self.hash!r})"
     
 
 if not db_conn:

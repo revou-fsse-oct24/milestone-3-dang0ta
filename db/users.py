@@ -14,9 +14,9 @@ class UserNotFoundException(Exception):
 def create_user(request: CreateUserRequest) -> str:
     try:
         user = Users(
-            name=request.name,
+            username=request.name,
             fullname=request.fullname,     
-            email_address= request.email_address,       
+            email=request.email_address,       
         )
         
         db_session.add(user)
