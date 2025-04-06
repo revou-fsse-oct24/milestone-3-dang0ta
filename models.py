@@ -1,7 +1,14 @@
-from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_serializer
+from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_serializer, PlainSerializer
 from enum import Enum
-from datetime import datetime
-from typing import Optional, List
+from datetime import datetime, timezone
+from typing import Optional, List, Annotated
+import zoneinfo
+
+DateTime = Annotated[
+    # SQLite doesn't store any timezone information, so we assume everything coming from them is in UTC, see unit testing.
+    # we need to do integration test with real PostgreSQL to ensure that the test works well.
+    datetime, PlainSerializer(lambda dt: dt.replace(tzinfo=zoneinfo.ZoneInfo("UTC")).isoformat())
+]
 
 class UserInformation(BaseModel):
     name: str = Field(..., description="The name of the user")
@@ -94,19 +101,19 @@ class TransferRequest(BaseModel):
 class CreateBudgetRequest(BaseModel):
     name: str = Field(..., description="The name for the budget")
     amount: int = Field(..., description="The limit of the budget")
-    start_date: datetime = Field(..., description="Budget's start date")
-    end_date: datetime = Field(..., description="Budget's end date")
+    start_date: DateTime = Field(..., description="Budget's start date")
+    end_date: DateTime = Field(..., description="Budget's end date")
 
 class UpdateBudgetRequest(BaseModel):
     name: Optional[str] = Field(None, description="The name for the budget")
     amount: Optional[int] = Field(None, description="The limit of the budget")
-    start_date: Optional[datetime] = Field(None, description="Budget's start date")
-    end_date: Optional[datetime] = Field(None, description="Budget's end date")
+    start_date: Optional[DateTime] = Field(None, description="Budget's start date")
+    end_date: Optional[DateTime] = Field(None, description="Budget's end date")
 
 class Budget(BaseModel):
     id: str = Field(..., description="The ID of the budget")
     user: Optional[UserInformation] = Field(None, description="The owner of the budget")
     name: str = Field(..., description="The name of the budget")
     amount: int = Field(..., description="The limit of the budget")
-    start_date: datetime = Field(..., description="The budget's start date")
-    end_date: datetime = Field(..., description="The budget's end date")
+    start_date: DateTime = Field(..., description="The budget's start date")
+    end_date: DateTime = Field(..., description="The budget's end date")
