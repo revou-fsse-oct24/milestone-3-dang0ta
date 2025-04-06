@@ -16,12 +16,6 @@ For detailed documentation, please refer to:
 - Transaction management (deposits, withdrawals, transfers)
 - SQL support through sqlalchemy ORM
 
-## API Endpoints
-detailed documentation for API endpoints is available [here](docs/api_documentation.md)
-
-## Database Models
-detailed documentation for database models is available [here](docs/db_models.md)
-
 ## Installation
 
 1. Clone the repository
