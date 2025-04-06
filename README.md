@@ -16,7 +16,8 @@ For detailed documentation, please refer to:
 - Transaction management (deposits, withdrawals, transfers)
 - SQL support through sqlalchemy ORM
 - Role-based access control
-- Automated test run on git push
+- Automated test run on git push through [GitHub Actions](https://github.com/features/actions)
+- Unit testing with coverage report
 
 ## Installation
 
