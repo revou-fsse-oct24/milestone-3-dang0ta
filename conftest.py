@@ -6,6 +6,11 @@ from app import create_app
 from models import UserCredential, Account, Transaction
 from db import Base, DB
 from typing import List, Generator
+from auth_jwt.blacklist import blacklisted_tokens
+
+@pytest.fixture(autouse=True)
+def clear_blacklist():
+    blacklisted_tokens.clear()
 
 @pytest.fixture
 def app() -> Generator[Flask, None, None]:
