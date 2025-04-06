@@ -209,6 +209,7 @@ class Users(Base):
     )
 
     email: Mapped[str]
+    roles: Mapped[str] = mapped_column(String(30), default="customer")
     created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
@@ -241,7 +242,7 @@ class Users(Base):
         return orm_account
     
     def to_model(self) -> UserInformation:
-        return UserInformation(name=self.username, fullname=self.fullname, email_address=self.email, default_account_id=str(self.default_account_id))
+        return UserInformation(name=self.username, fullname=self.fullname, email_address=self.email)
     
     def get_accounts(self) -> List[AccountModel]:
         accounts = []
