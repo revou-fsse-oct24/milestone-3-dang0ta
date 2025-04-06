@@ -48,7 +48,7 @@ There's a shell script for generating HTML-based coverage:
 ./scripts/html-cov.sh
 ```
 
-Latest coverage: taken at Wednesday, March 12, 2025:
+Latest coverage:
 ![coverage](docs/latest_coverage.png)
 
 ## Live API
