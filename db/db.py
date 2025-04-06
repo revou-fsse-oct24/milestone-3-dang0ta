@@ -208,6 +208,8 @@ class Users(Base):
         back_populates="user", cascade="all, delete-orphan"
     )
 
+    budgets: Mapped[List["Budgets"]] = relationship(back_populates="user")
+
     email: Mapped[str]
     roles: Mapped[str] = mapped_column(String(30), default="customer")
     created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -281,6 +283,15 @@ class Credentials(Base):
 
     def __repr__(self) -> str:
         return f"Credential(id={self.id!r}, user_id={self.user_id!r}, username={self.user.username!r}, hash={self.hash!r})"
+    
+class Budgets(Base):
+    __tablename__ = "budgets"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user: Mapped["Users"] = relationship(back_populates="budgets")
+    amount: Mapped[int]
+    start_date: Mapped[DateTime] = mapped_column(DateTime(timezone=True))
+    end_date: Mapped[DateTime] = mapped_column(DateTime(timezone=True))
     
 
 if not db_conn:
