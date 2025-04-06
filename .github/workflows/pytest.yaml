@@ -31,3 +31,7 @@ jobs:
 
       - name: Run tests
         run: uv run pytest
+        env:
+          DB_CONN: sqlite:///
+          JWT_SECRET: test
+          JWT_ALGORITHM: HS256
