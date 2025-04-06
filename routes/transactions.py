@@ -6,6 +6,7 @@ from db.accounts import AccountsNotFoundException, AccountNotFoundException
 from models import Transaction, WithdrawRequest, DepositRequest, TransferRequest
 from typing import List
 from shared.exceptions import parseValidationError
+from rbac.route import is_account_belong_to_current_user
 
 def transaction_bp() -> Blueprint:
     bp = Blueprint("transactions", __name__, url_prefix="/transactions")
@@ -15,6 +16,9 @@ def transaction_bp() -> Blueprint:
     def handle_withdraw():
         try:
             withdraw_request = WithdrawRequest(**request.get_json())
+            if withdraw_request.account_id is not None:
+                if not is_account_belong_to_current_user(withdraw_request.account_id):
+                    return jsonify({"error": "Forbidden"}), 401
             transaction = withdraw(withdraw_request.account_id, withdraw_request.amount)
             return jsonify({"transaction": transaction.model_dump()}), 200
         except ValidationError as e:
@@ -27,6 +31,9 @@ def transaction_bp() -> Blueprint:
     def handle_deposit():
         try:
             deposit_request = DepositRequest(**request.get_json())
+            if deposit_request.account_id is not None:
+                if not is_account_belong_to_current_user(deposit_request.account_id):
+                    return jsonify({"error": "Forbidden"}), 401
             transaction = deposit(deposit_request.account_id, deposit_request.amount)
             return jsonify({"transaction": transaction.model_dump()}), 200
         except ValidationError as e:
@@ -39,6 +46,9 @@ def transaction_bp() -> Blueprint:
     def handle_transfer():
         try:
             transfer_request = TransferRequest(**request.get_json())
+            if transfer_request.account_id is not None:
+                if not is_account_belong_to_current_user(transfer_request.account_id):
+                    return jsonify({"error": "Forbidden"}), 401
             transaction = transfer(transfer_request.account_id, transfer_request.recipient_account_id, transfer_request.amount)
             return jsonify({"transaction": transaction.model_dump()}), 200
         except ValidationError as e:
@@ -63,6 +73,8 @@ def transaction_bp() -> Blueprint:
     def get_transaction(id:str):
         try:
             transaction = db_get_transaction(id)
+            if not is_account_belong_to_current_user(transaction.account_id):
+                return jsonify({"error": "Forbidden"}), 401
             return jsonify({"transaction": transaction.model_dump()}), 200
         except TransactionNotFoundException as e:
             return jsonify({"error": str(e)}), 404

@@ -42,10 +42,21 @@ class UserInformation(BaseModel):
     name: str                    # User's display name
     fullname: str | None         # User's full name (optional)
     email_address: EmailStr      # User's email address
-    default_account_id: str | None # ID of user's default account
+    default_account: Optional[Account] # User's default account
+    roles: List[str]             # List of user roles (e.g. ["customer"])
+    accounts: List[Account]      # List of user's accounts
+    created_at: datetime         # User creation timestamp
+    updated_at: datetime         # Last update timestamp
 
 class UserCredential(UserInformation):
     password: str               # User's password (hashed)
+
+class CreateUserRequest(BaseModel):
+    name: str                    # User's display name
+    fullname: str | None         # User's full name (optional)
+    email_address: EmailStr      # User's email address
+    password: str               # User's password (hashed)
+    roles: List[str] = ["customer"] # List of user roles, defaults to ["customer"]
 ```
 
 ### Account Models
@@ -128,14 +139,24 @@ class Transaction(BaseModel):
   ```json
   {
     "name": "John Doe",
+    "fullname": "John William Doe",
     "email_address": "john@example.com",
-    "password": "password123"
+    "password": "password123",
+    "roles": ["customer"]
   }
   ```
 - **Response**: `201 Created`
   ```json
   {
-    "id": "user_id"
+    "id": "user_id",
+    "name": "John Doe",
+    "fullname": "John William Doe",
+    "email_address": "john@example.com",
+    "default_account": null,
+    "roles": ["customer"],
+    "accounts": [],
+    "created_at": "2024-03-06T12:00:00Z",
+    "updated_at": "2024-03-06T12:00:00Z"
   }
   ```
 
@@ -146,8 +167,27 @@ class Transaction(BaseModel):
   ```json
   {
     "name": "John Doe",
+    "fullname": "John William Doe",
     "email_address": "john@example.com",
-    "default_account_id": "account_id"
+    "default_account": {
+      "id": "account_id",
+      "user_id": "user_id",
+      "balance": 1000,
+      "created_at": "2024-03-06T12:00:00Z",
+      "updated_at": "2024-03-06T12:00:00Z"
+    },
+    "roles": ["customer"],
+    "accounts": [
+      {
+        "id": "account_id",
+        "user_id": "user_id",
+        "balance": 1000,
+        "created_at": "2024-03-06T12:00:00Z",
+        "updated_at": "2024-03-06T12:00:00Z"
+      }
+    ],
+    "created_at": "2024-03-06T12:00:00Z",
+    "updated_at": "2024-03-06T12:00:00Z"
   }
   ```
 
@@ -158,6 +198,7 @@ class Transaction(BaseModel):
   ```json
   {
     "name": "John Doe",
+    "fullname": "John William Doe",
     "email_address": "john@example.com"
   }
   ```
@@ -165,8 +206,11 @@ class Transaction(BaseModel):
   ```json
   {
     "name": "John Doe",
+    "fullname": "John William Doe",
     "email_address": "john@example.com",
-    "default_account_id": "account_id"
+    "default_account_id": "account_id",
+    "created_at": "2024-03-06T12:00:00Z",
+    "updated_at": "2024-03-06T12:00:00Z"
   }
   ```
 

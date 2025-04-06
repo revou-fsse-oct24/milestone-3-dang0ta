@@ -15,6 +15,7 @@ For detailed documentation, please refer to:
 - Account management (create, read, update, delete)
 - Transaction management (deposits, withdrawals, transfers)
 - SQL support through sqlalchemy ORM
+- Role-based access control
 
 ## Installation
 

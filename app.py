@@ -20,11 +20,18 @@ def create_app():
 
         @app.errorhandler(exceptions.NotFound)
         def handle_notfound(e):
+            db_session.rollback()
             return jsonify({"error": "not found"}), 404
         
         @app.errorhandler(exceptions.InternalServerError)
         def handle_internal_error(e):
+            db_session.rollback()
             return jsonify({"error": "internal server error"}), 500
+
+        @app.errorhandler(exceptions.Forbidden)
+        def handle_forbidden(e):
+            db_session.rollback()
+            return jsonify({"error": "Forbidden"}), 401
             
         return app
     except Exception as e:

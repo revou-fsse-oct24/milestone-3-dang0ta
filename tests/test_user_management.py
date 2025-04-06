@@ -125,7 +125,7 @@ class TestPostUsers:
         assert len(accounts) == 1, f"expecting 1 account to exist, got {len(accounts)}"
         account = accounts[0]
         assert account.balance == 0
-        assert user.default_account_id == account.id
+        assert user.default_account.id == account.id
 
         response = client.get("/auth/logout", headers={"Authorization": f"Bearer {access_token}"})
         assert response.status_code == 200, response.get_data()

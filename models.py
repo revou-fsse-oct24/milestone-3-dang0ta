@@ -1,13 +1,15 @@
 from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_serializer
 from enum import Enum
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 class UserInformation(BaseModel):
     name: str = Field(..., description="The name of the user")
     fullname: str | None = Field(None, description="The full name of the user")
     email_address: EmailStr = Field(..., description="The email address of the user")
-    default_account_id: str | None = Field(None, description="The id of the default account")
+    default_account: Optional["Account"] = Field(None, description="The default account of the user")
+    roles: List[str] = Field(["customer"], description="The list of roles the user assumes")
+    accounts: List["Account"] = Field([], description="The list of accounts the user has")
 
 # TODO: delete UserCredential class
 class UserCredential(UserInformation):    
@@ -25,6 +27,7 @@ class CreateUserRequest(BaseModel):
     fullname: str | None = Field(None, description="The full name of the user")
     email_address: EmailStr = Field(..., description="The email address of the user")
     password: str = Field(..., description="user's password for authentication")
+    roles: List[str] = Field(["customer"], description="the list of roles the user will assume")
 
 class Account(BaseModel):
     id: str
