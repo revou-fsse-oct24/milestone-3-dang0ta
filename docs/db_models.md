@@ -79,9 +79,11 @@ The `User` model represents a user in the RevoBank system.
 
 **Fields:**
 - `id` (int): Primary key
-- `name` (str): Username (max 30 characters)
+- `username` (str): Username (max 30 characters)
 - `fullname` (Optional[str]): User's full name
-- `email_address` (str): User's email address
+- `email` (str): User's email address
+- `roles` (str): Comma-separated list of user roles
+- `default_account_id` (Optional[int]): ID of user's default account
 - `created_at` (DateTime): User creation timestamp
 - `updated_at` (DateTime): Last update timestamp
 
@@ -127,13 +129,27 @@ class UserInformation(BaseModel):
     name: str                    # User's display name
     fullname: str | None         # User's full name (optional)
     email_address: EmailStr      # User's email address
-    default_account_id: str | None # ID of user's default account
+    default_account: Optional[Account] # User's default account
+    roles: List[str]             # List of user roles (e.g. ["customer"])
+    accounts: List[Account]      # List of user's accounts
+    created_at: datetime         # User creation timestamp
+    updated_at: datetime         # Last update timestamp
 ```
 
 ### UserCredential
 ```python
 class UserCredential(UserInformation):
     password: str               # User's password (hashed)
+```
+
+### CreateUserRequest
+```python
+class CreateUserRequest(BaseModel):
+    name: str                    # User's display name
+    fullname: str | None         # User's full name (optional)
+    email_address: EmailStr      # User's email address
+    password: str               # User's password (hashed)
+    roles: List[str] = ["customer"] # List of user roles, defaults to ["customer"]
 ```
 
 ### Account
