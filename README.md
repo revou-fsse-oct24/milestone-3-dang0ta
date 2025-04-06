@@ -2,35 +2,25 @@
 
 A RESTful API for the RevoBank application, implemented with Python and Flask. This API provides banking functionalities including user management, account management, and transactions.
 
-## Activity Diagram
-This [documentation](docs/activity_diagram.md) covers all the activity diagrams.
+## Documentation
 
-## Features (WIP)
+For detailed documentation, please refer to:
+- [API Documentation](docs/api_documentation.md) - Complete API reference and usage
+- [Database Models](docs/db_models.md) - Database schema and models
+- [Activity Diagrams](docs/activity_diagram.md) - System workflows and processes
+
+## Features
 
 - User authentication and authorization with JWT
 - Account management (create, read, update, delete)
-- Transaction processing (deposits, withdrawals, transfers)
-- In-memory database (can be easily replaced with any SQL database)
+- Transaction management (deposits, withdrawals, transfers)
+- SQL support through sqlalchemy ORM
 
-## API Endpoints (WIP)
+## API Endpoints
+detailed documentation for API endpoints is available [here](docs/api_documentation.md)
 
-### User Management
-- `POST /users` - Create a new user account
-- `POST /users/login` - User login
-- `GET /users/me` - Retrieve current user profile
-- `PUT /users/me` - Update current user profile
-
-### Account Management
-- `GET /accounts` - Retrieve all accounts for current user
-- `GET /accounts/:id` - Retrieve specific account by ID
-- `POST /accounts` - Create a new account
-- `PUT /accounts/:id` - Update an account
-- `DELETE /accounts/:id` - Delete an account
-
-### Transaction Management
-- `GET /transactions` - Retrieve all transactions for user's accounts
-- `GET /transactions/:id` - Retrieve a specific transaction
-- `POST /transactions` - Create a new transaction (deposit, withdrawal, transfer)
+## Database Models
+detailed documentation for database models is available [here](docs/db_models.md)
 
 ## Installation
 
@@ -39,37 +29,33 @@ This [documentation](docs/activity_diagram.md) covers all the activity diagrams.
    ```bash
    uv sync
    ```
-3. Set up environment variables:
-   - Copy `.env.example` to `.env`
-   - Fill in the required values
-5. Start the server:
+3. Set these required environment variables:
+   - `DB_CONN`: database connection string, use `sqlite:///` for in-memory database.
+   - `JWT_SECRET`: randomly generated string for generating JWT signature.
+   - `JWT_ALGORITHM` (optional, default to `HS256`).
+4. Start the server:
    ```bash
    uv run ./main.py
    ```
-
-## Usage Examples
-
-### Create a user
-
-```bash
-curl -X POST http://localhost:5000/users \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "John Doe",
-    "email": "john@example.com",
-  }'
-```
-
+   or, on production use `gunicorn` instead:
+   ```bash
+   gunicorn 'app:create_app()'
+   ```
 
 ## Testing and Code Coverage
 
-To run tests (with code coverage, current coverage is around 93%):
+To run tests (with code coverage, current coverage is around 91%):
 ```bash
-uv run pytest --cov=.
+uv run pytest --cov=
 ```
 
-latest coverage: taken at Wednesday, March 12, 2025:
+There's a shell script for generating HTML-based coverage:
+```bash
+./scripts/html-cov.sh
+```
+
+Latest coverage: taken at Wednesday, March 12, 2025:
 ![coverage](docs/latest_coverage.png)
 
 ## Live API
-The server is up and ready for public access at [this link](https://disciplinary-sisile-dang0ta-1963dd4c.koyeb.app).
+This API is hosted on [koyeb](https://app.koyeb.com/), using free-tier service and free-tier PostgreSQL database. The server is up and ready for public access at [this link](https://disciplinary-sisile-dang0ta-1963dd4c.koyeb.app).
