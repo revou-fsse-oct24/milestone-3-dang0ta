@@ -1,6 +1,6 @@
 # Database Models Documentation
 
-This document provides detailed information about the database models used in the RevoBank system. The system uses SQLAlchemy ORM for database operations.
+This document provides detailed information about the database models used in the RevoBank system. The system uses SQLAlchemy ORM for database operations and Pydantic for data validation.
 
 ## Models Overview
 
@@ -98,14 +98,14 @@ The `User` model represents a user in the RevoBank system.
 - `__repr__()`: String representation of the user
 
 ### Credential
-The `Credential` model stores user password information.
+The `Credential` model stores user authentication information.
 
-**Table Name:** `user_credentials`
+**Table Name:** `credentials`
 
 **Fields:**
 - `id` (int): Primary key
 - `user_id` (int): Foreign key to User
-- `hash` (str): Hashed password
+- `password` (str): Hashed password
 - `created_at` (DateTime): Credential creation timestamp
 - `updated_at` (DateTime): Last update timestamp
 
@@ -113,7 +113,54 @@ The `Credential` model stores user password information.
 - Belongs to one `User` (one-to-one)
 
 **Methods:**
+- `update(password: str)`: Updates the password
+- `verify_password(password: str)`: Verifies the password
 - `__repr__()`: String representation of the credential
+
+## Pydantic Models
+
+The system uses Pydantic models for data validation and serialization:
+
+### UserInformation
+```python
+class UserInformation(BaseModel):
+    name: str                    # User's display name
+    fullname: str | None         # User's full name (optional)
+    email_address: EmailStr      # User's email address
+    default_account_id: str | None # ID of user's default account
+```
+
+### UserCredential
+```python
+class UserCredential(UserInformation):
+    password: str               # User's password (hashed)
+```
+
+### Account
+```python
+class Account(BaseModel):
+    id: str                     # Unique account identifier
+    user_id: str                # ID of account owner
+    balance: int                # Current account balance
+    created_at: datetime        # Account creation timestamp
+    updated_at: datetime        # Last update timestamp
+```
+
+### Transaction
+```python
+class TransactionTypes(str, Enum):
+    withdraw = "withdraw"
+    deposit = "deposit"
+    transfer = "transfer"
+
+class Transaction(BaseModel):
+    id: str                     # Unique transaction identifier
+    account_id: str             # Source account ID
+    transaction_type: TransactionTypes # Type of transaction
+    amount: int                 # Transaction amount
+    timestamp: datetime         # Transaction timestamp
+    recipient_id: str | None    # Recipient account ID (for transfers)
+```
 
 ## Type Definitions
 
