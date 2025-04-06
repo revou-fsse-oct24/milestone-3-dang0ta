@@ -17,7 +17,8 @@ class TestGetAccounts:
         Args:
             client: Flask test client
             access_token: Valid JWT access token
-            test_user_with_accounts: List of test accounts associated with the user
+            account_1_1: First test account
+            account_1_2: Second test account
             
         Verifies:
             - Response status code is 200
@@ -162,25 +163,25 @@ class TestGetAccountById:
         error = response_json["error"]
         assert "Invalid Token" in error, error
 
-    def test_get_account_by_id_nonexistent(self, client: Client, access_token: str):
-        """Test retrieval of non-existent account.
+    def test_get_account_by_id_forbidden(self, client: Client, access_token: str):
+        """Test retrieval of account with insufficient permissions.
         
         Args:
             client: Flask test client
             access_token: Valid JWT access token
             
         Verifies:
-            - Response status code is 404
+            - Response status code is 401
             - Response contains error message
-            - Error message indicates account not found
+            - Error message indicates forbidden access
         """
         response = client.get("/accounts/foobarqux", headers={"Authorization": f"Bearer {access_token}"})
-        assert response.status_code == 404, response.get_data()
+        assert response.status_code == 401, response.get_data()
         assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "error" in response_json
         error = response_json["error"]
-        assert "Account not found" in error, error
+        assert "Forbidden" in error, error
 
 class TestCreateAccount:
     """Test suite for POST /accounts/ endpoint.
@@ -295,12 +296,11 @@ class TestUpdateAccount:
         assert response_json["balance"] == 2000
 
     def test_update_default_account(self, client: Client, access_token: str):
-        """Test successful account update.
+        """Test successful update of default account.
         
         Args:
             client: Flask test client
             access_token: Valid JWT access token
-            account_id: ID of test account
             
         Verifies:
             - Response status code is 200
@@ -314,7 +314,7 @@ class TestUpdateAccount:
         assert response_json["balance"] == 2000
 
     def test_update_default_account_unauthorized(self, client: Client):
-        """Test unauthorized account update.
+        """Test unauthorized update of default account.
         
         Args:
             client: Flask test client
@@ -333,7 +333,7 @@ class TestUpdateAccount:
         assert "Unauthorized" in error, error
 
     def test_update_default_account_invalid_token(self, client: Client):
-        """Test account update with invalid JWT token.
+        """Test default account update with invalid JWT token.
         
         Args:
             client: Flask test client
@@ -352,7 +352,7 @@ class TestUpdateAccount:
         assert "Invalid Token" in error, error
 
     def test_update_default_account_invalid_json(self, client: Client, access_token: str):
-        """Test account update with invalid input data.
+        """Test default account update with invalid input data.
         
         Args:
             client: Flask test client
@@ -437,17 +437,37 @@ class TestUpdateAccount:
             access_token: Valid JWT access token
             
         Verifies:
-            - Response status code is 404
+            - Response status code is 401
             - Response contains error message
-            - Error message indicates account not found
+            - Error message indicates forbidden access
         """
         response = client.put("/accounts/foobarqux", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": 2000})
-        assert response.status_code == 404, response.get_data()
+        assert response.status_code == 401, response.get_data()
         assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "error" in response_json
         error = response_json["error"]
-        assert "Account not found" in error, error
+        assert "Forbidden" in error, error
+
+    def test_update_account_forbidden(self, client: Client, access_token: str):
+        """Test update of account with insufficient permissions.
+        
+        Args:
+            client: Flask test client
+            access_token: Valid JWT access token
+            
+        Verifies:
+            - Response status code is 401
+            - Response contains error message
+            - Error message indicates forbidden access
+        """
+        response = client.put("/accounts/foobarqux", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": 2000})
+        assert response.status_code == 401, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "error" in response_json
+        error = response_json["error"]
+        assert "Forbidden" in error, error
 
 class TestDeleteAccount:
     """Test suite for DELETE /accounts/<account_id> endpoint.
@@ -522,14 +542,34 @@ class TestDeleteAccount:
             access_token: Valid JWT access token
             
         Verifies:
-            - Response status code is 404
+            - Response status code is 401
             - Response contains error message
-            - Error message indicates account not found
+            - Error message indicates forbidden access
         """
         response = client.delete("/accounts/foobarqux", headers={"Authorization": f"Bearer {access_token}"})
-        assert response.status_code == 404, response.get_data()
+        assert response.status_code == 401, response.get_data()
         assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "error" in response_json
         error = response_json["error"]
-        assert "Account not found" in error, error
+        assert "Forbidden" in error, error
+
+    def test_delete_account_forbidden(self, client: Client, access_token: str):
+        """Test deletion of account with insufficient permissions.
+        
+        Args:
+            client: Flask test client
+            access_token: Valid JWT access token
+            
+        Verifies:
+            - Response status code is 401
+            - Response contains error message
+            - Error message indicates forbidden access
+        """
+        response = client.delete("/accounts/foobarqux", headers={"Authorization": f"Bearer {access_token}"})
+        assert response.status_code == 401, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "error" in response_json
+        error = response_json["error"]
+        assert "Forbidden" in error, error
