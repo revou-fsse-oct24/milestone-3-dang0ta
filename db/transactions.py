@@ -1,10 +1,9 @@
-from typing import Optional, List, Dict
-from db import db_session, Accounts, Transactions, TransactionEntries, Users
+from typing import Optional, List
+from db import db_session, Accounts, Transactions, TransactionEntries
 from models import Transaction as TransactionModel, TransactionTypes
-from .accounts import AccountNotFoundException, AccountsNotFoundException
+from .accounts import AccountNotFoundException
 from sqlalchemy import select
-from sqlalchemy.exc import NoResultFound
-from sqlalchemy.orm import selectinload 
+from sqlalchemy.orm import joinedload 
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -138,6 +137,7 @@ def get_transactions(query: TransactionQuery, current_user: str) -> List[Transac
         .join(Accounts)
         .join(Transactions)
         .where(Accounts.user_id.is_(current_user))
+        .options(joinedload(Transactions.entries))
     )
     
     if query.account_id is not None:
@@ -149,85 +149,56 @@ def get_transactions(query: TransactionQuery, current_user: str) -> List[Transac
     if query.transaction_type is not None:
         statement = statement.filter(Transactions.transaction_type.in_(query.transaction_type))
         
-    # transactions = db_session.execute(statement=statement.order_by(Transactions.timestamp.desc())).fetchall()
-    result = db_session.scalars(statement=statement).all()
+    result = db_session.scalars(statement=statement).unique().all()
     transactions: List[TransactionModel] = []
     for transaction in result:
-        if len(transaction.entries) == 0:
-            # TODO: maybe we should log this out?
-            continue
-
-        if transaction.transaction_type != "transfer":
-            entry = transaction.entries[0]
-            transactions.append(TransactionModel(
-                id=str(transaction.id),
-                account_id=str(entry.account_id),
-                transaction_type=transaction.transaction_type,
-                amount=entry.amount,
-                timestamp=transaction.timestamp.isoformat(),                    
-            ))
-            continue
-        
-        if len(transaction.entries) < 2:
-            # TODO: maybe we should log this out?
-            continue
-            
-        sender, recipient = transaction.entries[0], transaction.entries[1]
-        if sender.entry_type == "credit":
-            sender, recipient = transaction.entries[1], transaction.entries[0]
-        
-        transactions.append(TransactionModel(
-            id=str(transaction.id),
-            account_id=str(sender.account_id),
-            transaction_type=transaction.transaction_type,
-            amount=sender.amount,
-            timestamp=transaction.timestamp.isoformat(), 
-            recipient_id=str(recipient.account_id)
-        ))
+        parsed = parse_transaction_model(transaction)
+        if parsed is not None:
+            transactions.append(parsed)
 
     return transactions
     
 def get_transaction(transaction_id:str) -> Optional[TransactionModel]:
-    try:
+    transaction = db_session.get(Transactions, transaction_id, options=[joinedload(Transactions.entries)])
 
-        transaction = db_session.scalars(statement=(
-            select(Transactions)
-            .filter_by(id=transaction_id)            
-        )).one()
+    if transaction is None:
+        raise TransactionNotFoundException(transaction_id=transaction_id)
 
-        if not transaction:
-            raise TransactionNotFoundException(transaction_id=transaction_id)
+    result = parse_transaction_model(transaction)
+    if result is None:
+        raise TransactionNotFoundException(transaction_id=transaction_id)
+    
+    return result
         
-        entries = db_session.scalars(
-            select(TransactionEntries).where(TransactionEntries.transaction_id.is_(transaction.id))
-        ).all()
+    
+def parse_transaction_model(transaction: Transactions)-> Optional[TransactionModel]:
+    if len(transaction.entries) == 0:
+        # TODO: log out that there's an invalid transaction entry
+        return None
 
-        if not entries or len(entries) == 0:
-            raise TransactionNotFoundException(transaction_id=transaction_id)
-
-        if len(entries) == 1:
-            entry = entries[0]
-            return TransactionModel(
-                id=str(transaction.id),
-                account_id=str(entry.account_id),
-                transaction_type=transaction.transaction_type,
-                amount=entry.amount,
-                timestamp=transaction.timestamp.isoformat(),                
-            )
-
-        sender, recipient = entries[0], entries[1]
-        if sender.entry_type == "credit":
-            sender, recipient = entries[1], entries[0]
-        
+    if transaction.transaction_type != "transfer":
+        entry = transaction.entries[0]
         return TransactionModel(
             id=str(transaction.id),
-            account_id=str(sender.account_id),
+            account_id=str(entry.account_id),
             transaction_type=transaction.transaction_type,
-            amount=recipient.amount,
-            timestamp=transaction.timestamp.isoformat(),    
-            recipient_id=str(recipient.account_id)
+            amount=entry.amount,
+            timestamp=transaction.timestamp.isoformat(),                    
         )
-
-    except NoResultFound:
-        db_session.rollback()
-        raise TransactionNotFoundException(transaction_id=transaction_id)
+    
+    if len(transaction.entries) < 2:
+        # TODO: log out that there's an invalid transaction entry
+        return None
+        
+    sender, recipient = transaction.entries[0], transaction.entries[1]
+    if sender.entry_type == "credit":
+        sender, recipient = transaction.entries[1], transaction.entries[0]
+    
+    return TransactionModel(
+        id=str(transaction.id),
+        account_id=str(sender.account_id),
+        transaction_type=transaction.transaction_type,
+        amount=sender.amount,
+        timestamp=transaction.timestamp.isoformat(), 
+        recipient_id=str(recipient.account_id)
+    )
