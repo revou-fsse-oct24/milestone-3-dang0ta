@@ -287,6 +287,7 @@ class Credentials(Base):
 class Budgets(Base):
     __tablename__ = "budgets"
     id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(30))
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     user: Mapped["Users"] = relationship(back_populates="budgets")
     amount: Mapped[int]
