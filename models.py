@@ -1,7 +1,14 @@
-from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_serializer
+from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_serializer, PlainSerializer
 from enum import Enum
-from datetime import datetime
-from typing import Optional, List
+from datetime import datetime, timezone
+from typing import Optional, List, Annotated
+import zoneinfo
+
+DateTime = Annotated[
+    # SQLite doesn't store any timezone information, so we assume everything coming from them is in UTC, see unit testing.
+    # we need to do integration test with real PostgreSQL to ensure that the test works well.
+    datetime, PlainSerializer(lambda dt: dt.replace(tzinfo=zoneinfo.ZoneInfo("UTC")).isoformat())
+]
 
 class UserInformation(BaseModel):
     name: str = Field(..., description="The name of the user")
@@ -10,6 +17,7 @@ class UserInformation(BaseModel):
     default_account: Optional["Account"] = Field(None, description="The default account of the user")
     roles: List[str] = Field(["customer"], description="The list of roles the user assumes")
     accounts: List["Account"] = Field([], description="The list of accounts the user has")
+    budgets: List["Budget"] = Field([], description="The list of the user's budget")
 
 # TODO: delete UserCredential class
 class UserCredential(UserInformation):    
@@ -89,3 +97,23 @@ class TransferRequest(BaseModel):
     account_id: str = Field(..., description="The ID of the current user's account")
     recipient_account_id: str = Field(..., description="The ID of the recipient account")
     amount: int = Field(..., description="the nominal of the transfer, accepts only positive number if transfer_type is 'withdraw' or 'deposit'. Negative number on transaction_type transfer indicates transfer from account_id to recipient_account_id, positive number indicates otherwise")
+
+class CreateBudgetRequest(BaseModel):
+    name: str = Field(..., description="The name for the budget")
+    amount: int = Field(..., description="The limit of the budget")
+    start_date: DateTime = Field(..., description="Budget's start date")
+    end_date: DateTime = Field(..., description="Budget's end date")
+
+class UpdateBudgetRequest(BaseModel):
+    name: Optional[str] = Field(None, description="The name for the budget")
+    amount: Optional[int] = Field(None, description="The limit of the budget")
+    start_date: Optional[DateTime] = Field(None, description="Budget's start date")
+    end_date: Optional[DateTime] = Field(None, description="Budget's end date")
+
+class Budget(BaseModel):
+    id: str = Field(..., description="The ID of the budget")
+    user: Optional[UserInformation] = Field(None, description="The owner of the budget")
+    name: str = Field(..., description="The name of the budget")
+    amount: int = Field(..., description="The limit of the budget")
+    start_date: DateTime = Field(..., description="The budget's start date")
+    end_date: DateTime = Field(..., description="The budget's end date")
