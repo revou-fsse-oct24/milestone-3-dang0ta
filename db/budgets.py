@@ -4,6 +4,7 @@ from .db import Budgets, db_session, Users
 from db.users import UserNotFoundException
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
+from sqlalchemy.orm import joinedload
 
 class BudgetsNotFoundException(Exception):
     def __init__(self, user_id:str):
@@ -48,25 +49,52 @@ def create_budget(user_id: str, request: CreateBudgetRequest) -> Optional[Budget
 
     db_session.commit()
     return response
+
+def get_budget(budget_id: str) -> BudgetModel:
+    budget = db_session.get(Budgets, budget_id, options=[joinedload(Budgets.user)])
+    if budget is None:
+        raise BudgetNotFoundException(budget_id=budget_id)
     
-def get_budgets(user_id: str) -> List[BudgetModel]:
-    try:
-        statement = select(Budgets).where(Budgets.user_id.is_(user_id))
-        budgets = db_session.scalars(statement=statement).all()
-        return [BudgetModel(
+    return BudgetModel(
             id=str(budget.id),
             name=budget.name,
             amount=budget.amount,
+            user=UserInformation(
+                name=budget.user.username,
+                fullname=budget.user.fullname,
+                email_address=budget.user.email,
+                roles=budget.user.roles.split(","),     
+            ),
+            start_date=budget.start_date.isoformat(),
+            end_date=budget.end_date.isoformat(),
+        )
+    
+def get_budgets(user_id: str) -> List[BudgetModel]:
+    try:
+        statement = select(Budgets).where(Budgets.user_id.is_(user_id)).options(joinedload(Budgets.user))
+        budgets = db_session.scalars(statement=statement).all()
+        response =  [BudgetModel(
+            id=str(budget.id),
+            name=budget.name,
+            amount=budget.amount,
+            user=UserInformation(
+                name=budget.user.username,
+                fullname=budget.user.fullname,
+                email_address=budget.user.email,
+                default_account=None,
+                roles=budget.user.roles.split(","),     
+            ),
             start_date=budget.start_date.isoformat(),
             end_date=budget.end_date.isoformat(),
         ) for budget in budgets]
+        return response
     except NoResultFound as e:
         db_session.rollback()
         raise BudgetsNotFoundException(user_id=user_id)
     
 def update_budget(budget_id: str, request: UpdateBudgetRequest)-> Optional[BudgetModel]:
     try:
-        budget = db_session.get(Budgets, budget_id)
+        budget = db_session.get(Budgets, budget_id, options=[joinedload(Budgets.user)])
         if request.amount is not None:
             budget.amount = request.amount
         if request.name is not None:
@@ -78,6 +106,20 @@ def update_budget(budget_id: str, request: UpdateBudgetRequest)-> Optional[Budge
 
         db_session.flush()
         db_session.commit()
+        return BudgetModel(
+            id=str(budget.id),
+            name=budget.name,
+            amount=budget.amount,
+            user=UserInformation(
+                name=budget.user.username,
+                fullname=budget.user.fullname,
+                email_address=budget.user.email,
+                default_account=None,
+                roles=budget.user.roles.split(","),     
+            ),
+            start_date=budget.start_date.isoformat(),
+            end_date=budget.end_date.isoformat(),
+        )
     except NoResultFound:
         db_session.rollback()
         raise BudgetNotFoundException(budget_id=budget_id)
