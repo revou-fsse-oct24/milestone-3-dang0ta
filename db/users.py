@@ -1,7 +1,8 @@
 import bcrypt
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
-from models import UserInformation, UserCredential, CreateUserRequest
+from sqlalchemy.orm import joinedload
+from models import UserInformation, CreateUserRequest, Account as AccountModel
 from db import db_session, Users, Accounts, Credentials
 from typing import Optional
 
@@ -44,9 +45,28 @@ def create_user(request: CreateUserRequest) -> str:
 
 def get_user(id:str) -> Optional[UserInformation]:
     try:
-        statement = select(Users).where(Users.id.is_(id))
-        user = db_session.scalars(statement=statement).one()
-        return user.to_model()
+        statement = select(Users).where(Users.id.is_(id)).options(joinedload(Users.accounts)).options(joinedload(Users.default_account))
+        user = db_session.scalars(statement=statement).unique().one()
+        return UserInformation(
+            name=user.username,
+            fullname=user.fullname,
+            email_address=user.email,
+            default_account=AccountModel(
+                id=str(user.default_account.id),
+                user_id=str(user.id),
+                balance=user.default_account.balance,
+                created_at=user.default_account.created_at.isoformat(),
+                updated_at=user.default_account.updated_at.isoformat(),
+            ),
+            roles=user.roles.split(","),
+            accounts=[AccountModel(
+                id=str(account.id),
+                user_id=str(user.id),
+                balance=account.balance,
+                created_at=account.created_at.isoformat(),
+                updated_at=account.updated_at.isoformat(),
+            ) for account in user.accounts],
+        )
     except NoResultFound:
         raise UserNotFoundException(id)
     
