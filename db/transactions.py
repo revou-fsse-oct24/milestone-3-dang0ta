@@ -14,123 +14,113 @@ class TransactionNotFoundException(Exception):
         self.transaction_id = transaction_id
 
 
-def withdraw(account_id:str, amount:int) -> Optional[TransactionModel]:
-    try:
-        statement = (
-            select(Accounts)
-            .where(Accounts.id.is_(account_id))
-        )
-
-        account = db_session.scalars(statement=statement).one()
-        
-        account.balance = account.balance - amount
-        transaction = Transactions(
-            transaction_type="withdraw"
-        )
-
-        entry = TransactionEntries(
-            transaction_id = transaction.id,
-            transaction = transaction,
-            account_id = account_id,
-            account = account,
-            entry_type = "debit",
-            amount = amount
-        )
-
-        db_session.add(transaction)
-        db_session.add(entry)
-        db_session.commit()
-        return entry.to_model(transaction)
-    except NoResultFound:
-        db_session.rollback()
+def withdraw(account_id:str, amount:int, description:str | None = None) -> Optional[TransactionModel]:
+    account = db_session.get(Accounts, account_id)
+    if account is None:
         raise AccountNotFoundException(account_id=account_id)
+    
+    account.balance = account.balance - amount
+    transaction = Transactions(
+        transaction_type="withdraw",
+        description=description,
+    )
 
-def deposit(account_id:str, amount:int) -> Optional[TransactionModel]:
-    try:
-        statement = (
-            select(Accounts)
-            .where(Accounts.id.is_(account_id))
-        )
+    db_session.add(transaction)
+    db_session.flush()
 
-        account = db_session.scalars(statement=statement).one()
-        account.balance = account.balance + amount
-        transaction = Transactions(
-            transaction_type="deposit"
-        )
+    entry = TransactionEntries(
+        transaction_id = transaction.id,
+        account_id = account.id,
+        entry_type = "debit",
+        amount = amount
+    )
 
-        entry = TransactionEntries(
-            transaction_id = transaction.id,
-            transaction = transaction,
-            account_id = account.id,
-            account = account,
-            entry_type = "credit",
-            amount=amount
-        )
+    db_session.add(entry)
+    db_session.commit()
+    return TransactionModel(
+        id=str(transaction.id),
+        account_id=str(account.id),
+        transaction_type=transaction.transaction_type,
+        amount=amount,
+        timestamp=transaction.timestamp.isoformat(),
+    )
 
-        db_session.add(transaction)
-        db_session.add(entry)
-        db_session.commit()
-        return entry.to_model(transaction)
-    except NoResultFound:
-        db_session.rollback()
+def deposit(account_id:str, amount:int, description: str | None = None) -> Optional[TransactionModel]:    
+    account = db_session.get(Accounts, account_id)
+    if account is None:
         raise AccountNotFoundException(account_id=account_id)
+    
+    account.balance = account.balance + amount
+    transaction = Transactions(
+        transaction_type="deposit",
+        description=description,
+    )
 
-def transfer(sender_account_id: str, recipient_account_id: str, amount: int) -> Optional[TransactionModel]:
-    try:
-        sender_account = db_session.scalars(statement=(
-            select(Accounts)
-            .where(Accounts.id.is_(sender_account_id))
-        )).one()
+    db_session.add(transaction)
+    db_session.flush()
 
-        if not sender_account:
-            raise AccountNotFoundException(account_id=sender_account_id)
+    entry = TransactionEntries(
+        transaction_id = transaction.id,
+        account_id = account.id,
+        entry_type = "credit",
+        amount=amount
+    )
+    
+    db_session.add(entry)
+    db_session.commit()
+    return TransactionModel(
+        id=str(transaction.id),
+        account_id=str(account.id),
+        transaction_type=transaction.transaction_type,
+        amount=amount,
+        timestamp=transaction.timestamp.isoformat(),
+    )
 
-        sender_account.balance = sender_account.balance - amount
-
-        recipient_account = db_session.scalars(statement=(
-            select(Accounts)
-            .where(Accounts.id.is_(recipient_account_id))
-        )).one()
-
-        if not recipient_account:
-            raise AccountNotFoundException(account_id=recipient_account_id)
-
-        recipient_account.balance = recipient_account.balance + amount
-
-        transaction = Transactions(
-            transaction_type="transfer"
-        )
-        db_session.add(transaction)
-        db_session.flush()
-
-        sender_entry = TransactionEntries(
-            transaction_id = transaction.id,
-            account_id = sender_account.id,
-            entry_type = "debit",
-            amount = amount
-        )
-
-        recipient_entry = TransactionEntries(
-            transaction_id = transaction.id,
-            account_id = recipient_account.id,
-            entry_type = "credit",
-            amount = amount
-        )
-
-        db_session.add(sender_entry)
-        db_session.add(recipient_entry)
-        db_session.commit()
-        return TransactionModel(
-            id=str(transaction.id),
-            account_id=str(sender_account_id),
-            transaction_type=transaction.transaction_type,
-            amount=sender_entry.amount,
-            timestamp=transaction.timestamp.isoformat(),
-            recipient_id=str(recipient_entry.account_id)
-        )
-    except NoResultFound as e:
-        db_session.rollback()
+def transfer(sender_account_id: str, recipient_account_id: str, amount: int, description:str | None = None) -> Optional[TransactionModel]:
+    sender_account = db_session.get(Accounts, sender_account_id)
+    if sender_account is None:
         raise AccountNotFoundException(account_id=sender_account_id)
+    
+    recipient_account = db_session.get(Accounts, recipient_account_id)
+    if recipient_account is None:
+        raise AccountNotFoundException(account_id=recipient_account_id)
+
+    sender_account.balance = sender_account.balance - amount
+    recipient_account.balance = recipient_account.balance + amount
+
+    transaction = Transactions(
+        transaction_type="transfer", 
+        description=description,
+    )
+
+    db_session.add(transaction)
+    db_session.flush()
+
+    sender_entry = TransactionEntries(
+        transaction_id = transaction.id,
+        account_id = sender_account.id,
+        entry_type = "debit",
+        amount = amount
+    )
+
+    recipient_entry = TransactionEntries(
+        transaction_id = transaction.id,
+        account_id = recipient_account.id,
+        entry_type = "credit",
+        amount = amount
+    )
+
+    db_session.add(sender_entry)
+    db_session.add(recipient_entry)
+    db_session.commit()
+    return TransactionModel(
+        id=str(transaction.id),
+        account_id=str(sender_account_id),
+        transaction_type=transaction.transaction_type,
+        amount=sender_entry.amount,
+        timestamp=transaction.timestamp.isoformat(),
+        recipient_id=str(recipient_entry.account_id)
+    )
     
 
 class TransactionQuery(BaseModel):
