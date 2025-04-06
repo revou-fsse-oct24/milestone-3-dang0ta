@@ -448,7 +448,7 @@ class TestUpdateAccount:
         error = response_json["error"]
         assert "invalid balance" in error, error
 
-    def test_update_account_nonexistent(self, client: Client, access_token: str):
+    def test_update_account_nonexistent(self, client: Client, access_token: str, admin_access_token: str):
         """Test update of non-existent account.
         
         Args:
@@ -456,17 +456,17 @@ class TestUpdateAccount:
             access_token: Valid JWT access token
             
         Verifies:
-            - Response status code is 401
+            - Response status code is 404
             - Response contains error message
-            - Error message indicates forbidden access
+            - Error message indicating the account can't be found
         """
-        response = client.put("/accounts/foobarqux", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": 2000})
-        assert response.status_code == 401, response.get_data()
+        response = client.put("/accounts/foobarqux", headers={"Authorization": f"Bearer {admin_access_token}"}, json={"balance": 2000})
+        assert response.status_code == 404, response.get_data()
         assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "error" in response_json
         error = response_json["error"]
-        assert "Forbidden" in error, error
+        assert "Account not found" in error, error
 
     def test_update_account_forbidden(self, client: Client, access_token: str):
         """Test update of account with insufficient permissions.

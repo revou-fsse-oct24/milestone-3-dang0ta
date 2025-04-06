@@ -13,36 +13,32 @@ class UserNotFoundException(Exception):
         self.id = id
 
 def create_user(request: CreateUserRequest) -> str:
-    try:
-        user = Users(
-            username=request.name,
-            fullname=request.fullname,     
-            email=request.email_address,     
-            roles=",".join(request.roles)
-        )
-        
-        db_session.add(user)
-        db_session.flush()
-        account = Accounts(
-            user_id=user.id,
-            balance=0,
-        )
+    user = Users(
+        username=request.name,
+        fullname=request.fullname,     
+        email=request.email_address,     
+        roles=",".join(request.roles)
+    )
+    
+    db_session.add(user)
+    db_session.flush()
+    account = Accounts(
+        user_id=user.id,
+        balance=0,
+    )
 
-        credential = Credentials(
-            user_id=user.id,
-            hash=bcrypt.hashpw(request.password.encode(), bcrypt.gensalt())
-        )
+    credential = Credentials(
+        user_id=user.id,
+        hash=bcrypt.hashpw(request.password.encode(), bcrypt.gensalt())
+    )
 
-        db_session.add_all([account, credential])
-        db_session.flush()
+    db_session.add_all([account, credential])
+    db_session.flush()
 
-        user.default_account_id = account.id
+    user.default_account_id = account.id
 
-        db_session.commit()
-        return user.id
-    except Exception as e:
-        db_session.rollback()
-        raise e
+    db_session.commit()
+    return user.id
 
 def get_user(id:str) -> Optional[UserInformation]:
     try:

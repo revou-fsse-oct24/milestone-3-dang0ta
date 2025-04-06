@@ -59,9 +59,6 @@ def update_account(user_id:str, request: UpdateAccountRequest) -> Optional[Accou
     except NoResultFound as e:
         db_session.rollback()
         raise AccountsNotFoundException(user_id=user_id)
-    except Exception as e:
-        db_session.rollback()
-        raise e
     
 def create_account(user_id:str, request: CreateAccountRequest) -> AccountModel:
     try:
@@ -72,9 +69,6 @@ def create_account(user_id:str, request: CreateAccountRequest) -> AccountModel:
     except NoResultFound as e:
         db_session.rollback()
         raise AccountNotFoundException(account_id="")
-    except Exception as e:
-        db_session.rollback()
-        raise e
     
 def delete_account(user_id:str, account_id:str):
     try:
@@ -86,8 +80,5 @@ def delete_account(user_id:str, account_id:str):
     except NoResultFound as e:
         db_session.rollback()
         raise AccountNotFoundException(account_id=account_id)
-    except Exception as e:
-        db_session.rollback()
-        raise e
     
 
