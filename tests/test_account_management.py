@@ -27,6 +27,7 @@ class TestGetAccounts:
         """
         response = client.get("/accounts/", headers={"Authorization": f"Bearer {access_token}"})
         assert response.status_code == 200, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_data = response.get_json()
         assert "accounts" in response_data
         # there should be 3 accounts for the user, including the default account
@@ -52,6 +53,7 @@ class TestGetAccounts:
         """
         response = client.get("/accounts/")
         assert response.status_code == 401, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "error" in response_json
         error = response_json["error"]
@@ -71,6 +73,7 @@ class TestGetAccounts:
         token = create_access_token(identity="foo")
         response = client.get("/accounts/", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 404, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_data = response.get_json()
         assert "error" in response_data
         assert "no account found for the user" in response_data["error"]
@@ -88,6 +91,7 @@ class TestGetAccounts:
         """
         response = client.get("/accounts/", headers={"Authorization": "Bearer invalid_token"})
         assert response.status_code == 401, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "error" in response_json
         error = response_json["error"]
@@ -115,6 +119,7 @@ class TestGetAccountById:
         """
         response = client.get(f"/accounts/{account_id}", headers={"Authorization": f"Bearer {access_token}"})
         assert response.status_code == 200, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_data = response.get_json()
         assert "balance" in response_data
         assert response_data["balance"] == 1000
@@ -132,6 +137,7 @@ class TestGetAccountById:
         """
         response = client.get("/accounts/1")
         assert response.status_code == 401, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "error" in response_json
         error = response_json["error"]
@@ -150,6 +156,7 @@ class TestGetAccountById:
         """
         response = client.get("/accounts/1", headers={"Authorization": "Bearer invalid_token"})
         assert response.status_code == 401, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "error" in response_json
         error = response_json["error"]
@@ -169,6 +176,7 @@ class TestGetAccountById:
         """
         response = client.get("/accounts/foobarqux", headers={"Authorization": f"Bearer {access_token}"})
         assert response.status_code == 404, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "error" in response_json
         error = response_json["error"]
@@ -195,6 +203,7 @@ class TestCreateAccount:
         """
         response = client.post("/accounts/", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": 1000})
         assert response.status_code == 201, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "account" in response_json
         account = Account(**response_json["account"])
@@ -213,6 +222,7 @@ class TestCreateAccount:
         """
         response = client.post("/accounts/", json={"balance": 1000})
         assert response.status_code == 401, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "error" in response_json
         error = response_json["error"]
@@ -231,6 +241,7 @@ class TestCreateAccount:
         """
         response = client.post("/accounts/", headers={"Authorization": "Bearer invalid_token"}, json={"balance": 1000})
         assert response.status_code == 401, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "error" in response_json
         error = response_json["error"]
@@ -250,6 +261,7 @@ class TestCreateAccount:
         """
         response = client.post("/accounts/", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": "invalid"})
         assert response.status_code == 400, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "error" in response_json
         error = response_json["error"]
@@ -277,6 +289,7 @@ class TestUpdateAccount:
         """
         response = client.put(f"/accounts/{account_id}", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": 2000})
         assert response.status_code == 200, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "balance" in response_json
         assert response_json["balance"] == 2000
@@ -295,6 +308,7 @@ class TestUpdateAccount:
         """
         response = client.put(f"/accounts", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": 2000}, follow_redirects=True)
         assert response.status_code == 200, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "balance" in response_json
         assert response_json["balance"] == 2000
@@ -312,6 +326,7 @@ class TestUpdateAccount:
         """
         response = client.put("/accounts", json={"balance": 2000}, follow_redirects=True)
         assert response.status_code == 401, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "error" in response_json
         error = response_json["error"]
@@ -330,6 +345,7 @@ class TestUpdateAccount:
         """
         response = client.put("/accounts", headers={"Authorization": "Bearer invalid_token"}, json={"balance": 2000}, follow_redirects=True)
         assert response.status_code == 401, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "error" in response_json
         error = response_json["error"]
@@ -349,6 +365,7 @@ class TestUpdateAccount:
         """
         response = client.put("/accounts", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": "invalid"}, follow_redirects=True)
         assert response.status_code == 400, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "error" in response_json
         error = response_json["error"]
@@ -367,6 +384,7 @@ class TestUpdateAccount:
         """
         response = client.put("/accounts/1", json={"balance": 2000})
         assert response.status_code == 401, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "error" in response_json
         error = response_json["error"]
@@ -385,6 +403,7 @@ class TestUpdateAccount:
         """
         response = client.put("/accounts/1", headers={"Authorization": "Bearer invalid_token"}, json={"balance": 2000})
         assert response.status_code == 401, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "error" in response_json
         error = response_json["error"]
@@ -404,6 +423,7 @@ class TestUpdateAccount:
         """
         response = client.put("/accounts/1", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": "invalid"})
         assert response.status_code == 400, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "error" in response_json
         error = response_json["error"]
@@ -423,6 +443,7 @@ class TestUpdateAccount:
         """
         response = client.put("/accounts/foobarqux", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": 2000})
         assert response.status_code == 404, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "error" in response_json
         error = response_json["error"]
@@ -450,6 +471,7 @@ class TestDeleteAccount:
         """
         response = client.delete(f"/accounts/{account_id}", headers={"Authorization": f"Bearer {access_token}"})
         assert response.status_code == 200, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "result" in response_json
         assert response_json["result"] == "deleted"   
@@ -467,6 +489,7 @@ class TestDeleteAccount:
         """
         response = client.delete("/accounts/1")
         assert response.status_code == 401, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "error" in response_json
         error = response_json["error"]
@@ -485,6 +508,7 @@ class TestDeleteAccount:
         """
         response = client.delete("/accounts/1", headers={"Authorization": "Bearer invalid_token"})
         assert response.status_code == 401, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "error" in response_json
         error = response_json["error"]
@@ -504,6 +528,7 @@ class TestDeleteAccount:
         """
         response = client.delete("/accounts/foobarqux", headers={"Authorization": f"Bearer {access_token}"})
         assert response.status_code == 404, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "error" in response_json
         error = response_json["error"]

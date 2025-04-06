@@ -20,7 +20,7 @@ def get_and_compare_hash(email_address:str, password:str) -> str:
     if email_address is None or password is None:
             raise WrongCredentialException(email=email_address)
     try:
-        statement = select(Users).where(Users.email_address.is_(email_address))
+        statement = select(Users).where(Users.email.is_(email_address))
         user = db_session.scalars(statement=statement).one()
         if user is None:
             raise UserNotFoundException(email=email_address)

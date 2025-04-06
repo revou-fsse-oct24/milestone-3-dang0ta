@@ -25,7 +25,7 @@ class TestPostUsers:
         """
         response = client.post("/users/", json={"name": "foo", "email_address": "foo@bar.com", "password": "password"})
         assert response.status_code == 201, response.get_data()
-
+        assert "application/json" in response.headers.get("content-type")
         response_data = response.get_json()
         assert response_data["id"] is not None
 
@@ -92,13 +92,14 @@ class TestPostUsers:
         """
         response = client.post("/users/", json={"name": "foo", "email_address": "foo@bar.com", "password": "password"})
         assert response.status_code == 201, response.get_data()
-
+        assert "application/json" in response.headers.get("content-type")
         response_data = response.get_json()
         assert response_data["id"] is not None
         id = response_data["id"]
 
         response = client.post("/auth/login", json={"email": "foo@bar.com", "password": "password"})
         assert response.status_code == 200, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_data = response.get_json()
         assert response_data["access_token"] is not None
         assert response_data["refresh_token"] is not None
@@ -107,6 +108,7 @@ class TestPostUsers:
 
         response = client.get("/users/me", headers={"Authorization": f"Bearer {access_token}"})
         assert response.status_code == 200, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_data = response.get_json()
         user =  UserInformation(**response_data)
         assert user.name == "foo"
@@ -114,6 +116,7 @@ class TestPostUsers:
 
         response = client.get("/accounts", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
         assert response.status_code == 200, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_data = response.get_json()
         assert "accounts" in response_data
 
@@ -148,6 +151,7 @@ class TestGetCurrentUser:
         """
         response = client.get("/users/me", headers={"Authorization": f"Bearer {access_token}"})
         assert response.status_code == 200, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_data = response.get_json()
         assert response_data["name"] == test_user.name
         assert response_data["email_address"] == test_user.email_address
@@ -161,6 +165,8 @@ class TestGetCurrentUser:
         """
         response = client.get("/users/me")
         assert response.status_code == 401, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
+        response_data = response.get_json()
 
     def test_get_authenticated_user_with_invalid_token(self, client: Client, access_token: str):
         """Test access denial for requests with invalid authentication token.
@@ -171,6 +177,8 @@ class TestGetCurrentUser:
         """
         response = client.get("/users/me", headers={"Authorization": f"Bearer {access_token}123"})
         assert response.status_code == 401, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
+        response_data = response.get_json()
 
     def test_nonexisting_user(self, client: FlaskClient):
         token = create_access_token(identity="foo")
@@ -198,6 +206,7 @@ class TestUpdateCurrentUser:
         """
         response = client.put("/users/me", headers={"Authorization": f"Bearer {access_token}"}, json={"name": "bar", "email_address": "bar@qux.com"})
         assert response.status_code == 200, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_data = response.get_json()
         assert response_data["name"] == "bar"
         assert response_data["email_address"] == "bar@qux.com"
@@ -211,6 +220,8 @@ class TestUpdateCurrentUser:
         """
         response = client.put("/users/me", json={"name": "bar", "email_address": "bar@qux.com"})
         assert response.status_code == 401, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
+        response_data = response.get_json()
 
     def test_update_current_user_invalid_token(self, client: Client, access_token: str):
         """Test access denial for update requests with invalid authentication token.
@@ -221,6 +232,8 @@ class TestUpdateCurrentUser:
         """
         response = client.put("/users/me", headers={"Authorization": f"Bearer {access_token}123"}, json={"name": "bar", "email_address": "bar@qux.com"})
         assert response.status_code == 401, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
+        response_data = response.get_json()
 
     def test_update_current_user_missing_name(self, client: Client, access_token: str):
         """Test validation when username is missing in update request.
@@ -231,6 +244,8 @@ class TestUpdateCurrentUser:
         """
         response = client.put("/users/me", headers={"Authorization": f"Bearer {access_token}"}, json={"email_address": "bar@qux.com"})
         assert response.status_code == 400, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
+        response_data = response.get_json()
         assert response.get_data() == b'{"error":"missing user name"}\n'
 
     def test_update_current_user_missing_email(self, client: Client, access_token: str):
@@ -242,6 +257,8 @@ class TestUpdateCurrentUser:
         """
         response = client.put("/users/me", headers={"Authorization": f"Bearer {access_token}"}, json={"name": "bar"})
         assert response.status_code == 400, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
+        response_data = response.get_json()
         assert response.get_data() == b'{"error":"missing email address"}\n'
 
     def test_update_current_user_invalid_email(self, client: Client, access_token: str):
@@ -253,6 +270,8 @@ class TestUpdateCurrentUser:
         """
         response = client.put("/users/me", headers={"Authorization": f"Bearer {access_token}"}, json={"name": "bar", "email_address": "foobarqux"})
         assert response.status_code == 400, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
+        response_data = response.get_json()
         assert response.get_data() == b'{"error":"invalid email address"}\n'
 
     def test_update_nonexisting_user(self, client: FlaskClient):
