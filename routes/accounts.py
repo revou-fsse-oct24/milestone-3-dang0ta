@@ -10,7 +10,7 @@ from db.accounts import update_account as db_update_account
 from db.accounts import create_account as db_create_account
 from db.accounts import delete_account as db_delete_account
 from db.accounts import AccountsNotFoundException, AccountNotFoundException
-from rbac.route import is_account_belong_to_current_user
+from rbac.route import is_account_belong_to_current_user, role_required
 
 def accounts_bp():
     bp = Blueprint("account", __name__, url_prefix="/accounts")
@@ -74,11 +74,10 @@ def get_account(id: str):
     except AccountNotFoundException:
         return jsonify({"error": "Account not found"}), 404
 
+
+@role_required("admin") # updating a specific account can only be done by admins
 def update_account(id: str):
     try:
-        if not is_account_belong_to_current_user(id):
-            return jsonify({"error": "Forbidden"}), 401
-        
         current_user = get_jwt_identity()
         req = UpdateAccountRequest(**request.get_json())
         req.account_id = id

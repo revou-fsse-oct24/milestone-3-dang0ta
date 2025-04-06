@@ -32,6 +32,9 @@ def test_user() -> UserCredential:
 def test_user_2() -> UserCredential:
     return UserCredential(name="test_user_2", email_address="test2@example.com", password="password")
 
+@pytest.fixture
+def admin() -> UserCredential:
+    return UserCredential(name="admin", email_address="admin@example.com", password="changeme", roles=["admin", "customer"])
 
 def create_access_token(client: FlaskClient, credential: UserCredential) -> str:
     response = client.post("/users/", json={"name": credential.name, "email_address": credential.email_address, "password": credential.password})
@@ -41,6 +44,23 @@ def create_access_token(client: FlaskClient, credential: UserCredential) -> str:
     assert response_data["id"] is not None
 
     response = client.post("/auth/login", json={"email": credential.email_address, "password": credential.password})
+    assert response.status_code == 200, response.get_data()
+    response_data = response.get_json()
+    assert response_data["access_token"] is not None
+    assert response_data["refresh_token"] is not None
+
+    access_token = response_data["access_token"]
+    return access_token
+
+@pytest.fixture
+def admin_access_token(client: FlaskClient, admin: UserCredential) -> str:
+    response = client.post("/users/", json={"name": admin.name, "email_address": admin.email_address, "password": admin.password, "roles": admin.roles})
+    assert response.status_code == 201, response.get_data()
+
+    response_data = response.get_json()
+    assert response_data["id"] is not None
+
+    response = client.post("/auth/login", json={"email": admin.email_address, "password": admin.password})
     assert response.status_code == 200, response.get_data()
     response_data = response.get_json()
     assert response_data["access_token"] is not None
@@ -96,3 +116,7 @@ def account_id(client: Client, access_token: str) -> str:
 @pytest.fixture
 def account_id_2(client: Client, access_token_2: str) -> str:
     return create_account_id(client, access_token_2, 1001)
+
+@pytest.fixture
+def admin_account_id(client: Client, admin_access_token: str) -> str:
+    return create_account_id(client, admin_access_token, 1003)

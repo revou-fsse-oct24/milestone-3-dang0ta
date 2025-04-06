@@ -276,7 +276,26 @@ class TestUpdateAccount:
     invalid input data, and non-existent account scenarios.
     """
     
-    def test_update_account(self, client: Client, access_token: str, account_id: str):
+    def test_update_account(self, client: Client, access_token: str, admin_access_token: str, account_id: str):
+        """Test successful account update.
+        
+        Args:
+            client: Flask test client
+            access_token: Valid JWT access token
+            account_id: ID of test account
+            
+        Verifies:
+            - Response status code is 200
+            - Response contains updated balance
+        """
+        response = client.put(f"/accounts/{account_id}", headers={"Authorization": f"Bearer {admin_access_token}"}, json={"balance": 2000})
+        assert response.status_code == 200, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "balance" in response_json
+        assert response_json["balance"] == 2000
+
+    def test_update_account_by_non_admin(self, client: Client, access_token: str, account_id: str):
         """Test successful account update.
         
         Args:
@@ -289,11 +308,11 @@ class TestUpdateAccount:
             - Response contains updated balance
         """
         response = client.put(f"/accounts/{account_id}", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": 2000})
-        assert response.status_code == 200, response.get_data()
+        assert response.status_code == 401
         assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
-        assert "balance" in response_json
-        assert response_json["balance"] == 2000
+        assert "error" in response_json
+        assert "Forbidden" in response_json["error"]
 
     def test_update_default_account(self, client: Client, access_token: str):
         """Test successful update of default account.
@@ -409,7 +428,7 @@ class TestUpdateAccount:
         error = response_json["error"]
         assert "Invalid Token" in error, error
 
-    def test_update_account_invalid_json(self, client: Client, access_token: str):
+    def test_update_account_invalid_json(self, client: Client, access_token: str, admin_access_token: str):
         """Test account update with invalid input data.
         
         Args:
@@ -421,7 +440,7 @@ class TestUpdateAccount:
             - Response contains error message
             - Error message indicates invalid balance
         """
-        response = client.put("/accounts/1", headers={"Authorization": f"Bearer {access_token}"}, json={"balance": "invalid"})
+        response = client.put("/accounts/1", headers={"Authorization": f"Bearer {admin_access_token}"}, json={"balance": "invalid"})
         assert response.status_code == 400, response.get_data()
         assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()

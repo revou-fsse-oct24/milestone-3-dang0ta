@@ -25,6 +25,10 @@ def create_app():
         @app.errorhandler(exceptions.InternalServerError)
         def handle_internal_error(e):
             return jsonify({"error": "internal server error"}), 500
+
+        @app.errorhandler(exceptions.Forbidden)
+        def handle_forbidden(e):
+            return jsonify({"error": "Forbidden"}), 401
             
         return app
     except Exception as e:

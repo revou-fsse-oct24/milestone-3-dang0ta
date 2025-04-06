@@ -17,7 +17,8 @@ def create_user(request: CreateUserRequest) -> str:
         user = Users(
             username=request.name,
             fullname=request.fullname,     
-            email=request.email_address,       
+            email=request.email_address,     
+            roles=",".join(request.roles)
         )
         
         db_session.add(user)
