@@ -169,7 +169,7 @@ def get_transactions(query: TransactionQuery, current_user: str) -> List[Transac
     result = db_session.scalars(statement=statement).unique().all()
     transactions: List[TransactionModel] = []
     for transaction in result:
-        parsed = parse_transaction_model(transaction)
+        parsed = _parse_transaction_model(transaction)
         if parsed is not None:
             transactions.append(parsed)
 
@@ -181,14 +181,14 @@ def get_transaction(transaction_id:str) -> Optional[TransactionModel]:
     if transaction is None:
         raise TransactionNotFoundException(transaction_id=transaction_id)
 
-    result = parse_transaction_model(transaction)
+    result = _parse_transaction_model(transaction)
     if result is None:
         raise TransactionNotFoundException(transaction_id=transaction_id)
     
     return result
         
     
-def parse_transaction_model(transaction: Transactions)-> Optional[TransactionModel]:
+def _parse_transaction_model(transaction: Transactions)-> Optional[TransactionModel]:
     if len(transaction.entries) == 0:
         # TODO: log out that there's an invalid transaction entry
         return None
@@ -221,3 +221,16 @@ def parse_transaction_model(transaction: Transactions)-> Optional[TransactionMod
         recipient_id=str(recipient.account_id),
         category=transaction.category.name
     )
+
+def get_categories(user_id: str) -> List[str]:
+    statement=(select(TransactionCategories)
+        .select_from(Accounts)
+        .where(Accounts.user_id.is_(user_id))
+        .join(TransactionEntries)
+        .join(Transactions)
+        .join(TransactionCategories)
+        .group_by(TransactionCategories.name)
+    )
+
+    categories = db_session.scalars(statement=statement).all()
+    return [category.name for category in categories]

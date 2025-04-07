@@ -359,6 +359,16 @@ class TestTransfer:
         assert "error" in response_json
         assert "invalid fields: account_id" in response_json["error"]
 
+class TestGetTransactionCategories:
+    def test_get_transaction_categories(self, client: FlaskClient, deposit: Transaction, withdraw: Transaction, transfer: Transaction,  access_token: str):
+        response = client.get("/transactions/categories", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
+        assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
+        response_json = response.get_json()
+        assert "categories" in response_json
+        assert len(response_json["categories"]) == 1
+        assert response_json["categories"][0] == "test"
+
 class TestGetTransactions:
     """Test suite for GET /transactions endpoint.
     
@@ -385,6 +395,7 @@ class TestGetTransactions:
         """
         response = client.get("/transactions", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
         assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "transactions" in response_json, "no transactions in response JSON"
         transactions = response_json["transactions"]
@@ -423,6 +434,7 @@ class TestGetTransactions:
         """
         response = client.get("/transactions?transaction_type=", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
         assert response.status_code == 200, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "transactions" in response_json, "no transactions in response JSON"
         transactions = response_json["transactions"]
@@ -460,6 +472,7 @@ class TestGetTransactions:
         """
         response = client.get("/transactions?transaction_type=deposit", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
         assert response.status_code == 200, response.get_data()
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "transactions" in response_json
         transactions = response_json["transactions"]
@@ -486,6 +499,7 @@ class TestGetTransactions:
         """
         response = client.get("/transactions?transaction_type=withdraw", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
         assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "transactions" in response_json
         transactions = response_json["transactions"]
@@ -511,6 +525,7 @@ class TestGetTransactions:
         """
         response = client.get("/transactions?transaction_type=transfer", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
         assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "transactions" in response_json
         transactions = response_json["transactions"]
@@ -554,6 +569,7 @@ class TestGetTransactions:
         """
         response = client.get("/transactions?transaction_type=transfer,deposit", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
         assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "transactions" in response_json, "no transactions in response JSON"
         transactions = response_json["transactions"]
@@ -591,6 +607,7 @@ class TestGetTransactions:
         """
         response = client.get("/transactions?transaction_type=withdraw,transfer,deposit", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
         assert response.status_code == 200
+        assert "application/json" in response.headers.get("content-type")
         response_json = response.get_json()
         assert "transactions" in response_json, "no transactions in response JSON"
         transactions = response_json["transactions"]
@@ -644,7 +661,7 @@ class TestGetTransactions:
         """
         response = client.get(f"/transactions?account_id={withdraw.account_id}", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
         assert response.status_code == 200
-        assert "application/json" in response.headers.get("content-type")
+        assert "application/json" in response.headers.get("content-type")        
         response_json = response.get_json()
         assert "transactions" in response_json
         transactions = [Transaction(**transaction) for transaction in response_json["transactions"]]
@@ -666,7 +683,7 @@ class TestGetTransactions:
         """
         response = client.get("/transactions?account_id=foo", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
         assert response.status_code == 200
-        assert "application/json" in response.headers.get("content-type")
+        assert "application/json" in response.headers.get("content-type")        
         response_json = response.get_json()
         assert "transactions" in  response_json
         assert len(response_json["transactions"]) == 0
@@ -686,28 +703,28 @@ class TestGetTransactions:
         """
         response = client.get(f"/transactions?range_from={transactions[0].timestamp.isoformat()}", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
         assert response.status_code == 200
-        assert "application/json" in response.headers.get("content-type")
+        assert "application/json" in response.headers.get("content-type")        
         response_json = response.get_json()
         assert "transactions" in response_json
         assert len(response_json["transactions"]) == 3
 
         response = client.get(f"/transactions?range_from={transactions[1].timestamp.isoformat()}", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
         assert response.status_code == 200
-        assert "application/json" in response.headers.get("content-type")
+        assert "application/json" in response.headers.get("content-type")        
         response_json = response.get_json()
         assert "transactions" in response_json
         assert len(response_json["transactions"]) == 2
 
         response = client.get(f"/transactions?range_from={transactions[2].timestamp.isoformat()}", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
         assert response.status_code == 200
-        assert "application/json" in response.headers.get("content-type")
+        assert "application/json" in response.headers.get("content-type")        
         response_json = response.get_json()
         assert "transactions" in response_json
         assert len(response_json["transactions"]) == 1
 
         response = client.get(f"/transactions?range_to={transactions[2].timestamp.isoformat()}", headers={"Authorization": f"Bearer {access_token}"}, follow_redirects=True)
         assert response.status_code == 200
-        assert "application/json" in response.headers.get("content-type")
+        assert "application/json" in response.headers.get("content-type")        
         response_json = response.get_json()
         assert "transactions" in response_json
         assert len(response_json["transactions"]) == 3

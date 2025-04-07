@@ -1,15 +1,29 @@
 from flask import Blueprint, request, jsonify
 from pydantic import ValidationError
 from auth_jwt import jwt_required, get_jwt_identity
-from db.transactions import withdraw, deposit, transfer, get_transactions as db_get_transactions, get_transaction as db_get_transaction, TransactionNotFoundException, TransactionQuery
+from db.transactions import withdraw
+from db.transactions import deposit
+from db.transactions import transfer
+from db.transactions import get_transactions as db_get_transactions
+from db.transactions import get_transaction as db_get_transaction
+from db.transactions import TransactionNotFoundException
+from db.transactions import TransactionQuery
+from db.transactions import get_categories
 from db.accounts import AccountsNotFoundException, AccountNotFoundException
-from models import Transaction, WithdrawRequest, DepositRequest, TransferRequest
+from models import WithdrawRequest, DepositRequest, TransferRequest
 from typing import List
 from shared.exceptions import parseValidationError
 from rbac.route import is_account_belong_to_current_user
 
 def transaction_bp() -> Blueprint:
     bp = Blueprint("transactions", __name__, url_prefix="/transactions")
+
+    @bp.route("/categories")
+    @jwt_required
+    def handle_categories():
+        current_user = get_jwt_identity()
+        categories = get_categories(user_id=current_user)
+        return jsonify({"categories": categories})
 
     @bp.route("/withdraw", methods=["POST"])
     @jwt_required
