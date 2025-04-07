@@ -11,7 +11,7 @@ if not jwt_secret:
 if not jwt_algorithm:
     raise ConfigurationError("JWT_ALGORITHM is not set")
 
-def create_access_token(identity:int, expires_delta=None) -> str:
+def create_access_token(identity:int | str, expires_delta=None) -> str:
     if not expires_delta:
         expires_delta = timedelta(hours=1) # token is expired in 1 hour by default.
 

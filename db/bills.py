@@ -1,6 +1,8 @@
 from typing import List
 from models import CreateBillRequest, Bill, QueryBillsRequest, UpdateBillRequest
-from db import db_session, Bills
+from db import db_session, Bills, Users, Accounts
+from db.users import UserNotFoundException
+from db.accounts import AccountNotFoundException
 from sqlalchemy import select
 
 class BillNotFoundException(Exception):
@@ -9,29 +11,47 @@ class BillNotFoundException(Exception):
         self.bill_id = bill_id
 
 def create_bill(user_id: str, request: CreateBillRequest) -> Bill:
+    user = db_session.get(Users, user_id)
+    if user is None:
+        raise UserNotFoundException(id=user_id)
+    
+    account_id = request.account_id
+    if account_id is None:
+        account_id = user.default_account_id
+    else:
+        account = db_session.get(Accounts, account_id)
+        if account is None:
+            raise AccountNotFoundException(account_id=account_id)
+        
+        account_id = account.id
+
     bill = Bills(
         user_id=user_id,
         biller_name=request.biller_name,
         due_date=request.due_date,
         amount=request.amount,
-        account_id=request.account_id,
+        account_id=account_id,
     )
 
     db_session.add(bill)
     db_session.flush()
 
     model = Bill(
-        id=bill.id,
+        id=str(bill.id),
         biller_name=request.biller_name,
-        due_date=request.due_date,
+        due_date=request.due_date.isoformat(),
         amount=request.amount,
-        account_id=request.account_id,
+        account_id=str(account_id),
     )
 
     db_session.commit()
     return model
 
 def get_bills(user_id: str, request:QueryBillsRequest) -> List[Bill]:
+    user = db_session.get(Users, user_id)
+    if user is None:
+        raise UserNotFoundException(id=user_id)
+    
     statement = (
         select(Bills)
         .where(Bills.user_id.is_(user_id))
@@ -65,7 +85,11 @@ def get_bills(user_id: str, request:QueryBillsRequest) -> List[Bill]:
     
     return bills
 
-def update_bill(bill_id:str, request: UpdateBillRequest) -> Bill:
+def update_bill(user_id: str, bill_id:str, request: UpdateBillRequest) -> Bill: 
+    user = db_session.get(Users, user_id)
+    if user is None:
+        raise UserNotFoundException(id=user_id)
+    
     bill = db_session.get(Bills, bill_id)
     if bill is None:
         raise BillNotFoundException(bill_id=bill_id)
@@ -88,7 +112,12 @@ def update_bill(bill_id:str, request: UpdateBillRequest) -> Bill:
 
     return updated
 
-def get_bill(bill_id: str) -> Bill:
+def get_bill(user_id: str, bill_id: str) -> Bill:
+
+    user = db_session.get(Users, user_id)
+    if user is None:
+        raise UserNotFoundException(id=user_id)
+    
     bill = db_session.get(Bills, bill_id)
     if bill is None:
         raise BillNotFoundException(bill_id=bill_id)
@@ -101,10 +130,15 @@ def get_bill(bill_id: str) -> Bill:
         amount=bill.amount,
     )
 
-def delete_bill(bill_id: str) -> bool:
+def delete_bill(user_id: str, bill_id: str) -> bool:
+    user = db_session.get(Users, user_id)
+    if user is None:
+        raise UserNotFoundException(id=user_id)
+    
     bill = db_session.get(Bills, bill_id)
     if bill is None:
         raise BillNotFoundException(bill_id=bill_id)
     
     db_session.delete(bill)
+    db_session.commit()
     return True
