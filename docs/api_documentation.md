@@ -409,6 +409,217 @@ class Transaction(BaseModel):
   }
   ```
 
+### Bill Management
+
+#### Create Bill
+- **POST** `/bills`
+- **Headers**: `Authorization: Bearer <token>`
+- **Request Body**:
+  ```json
+  {
+    "biller_name": "Electric Company",
+    "due_date": "2024-03-15T00:00:00Z",
+    "amount": 100,
+    "account_id": "account_id"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "bill": {
+      "id": "bill_id",
+      "biller_name": "Electric Company",
+      "due_date": "2024-03-15T00:00:00Z",
+      "amount": 100,
+      "account_id": "account_id"
+    }
+  }
+  ```
+
+#### Get Bills
+- **GET** `/bills`
+- **Headers**: `Authorization: Bearer <token>`
+- **Request Body** (optional filters):
+  ```json
+  {
+    "account_id": "account_id",
+    "biller_name": "Electric%",
+    "due_date_from": "2024-03-01T00:00:00Z",
+    "due_date_to": "2024-03-31T23:59:59Z",
+    "amount_min": 50,
+    "amount_max": 200
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "bills": [
+      {
+        "id": "bill_id",
+        "biller_name": "Electric Company",
+        "due_date": "2024-03-15T00:00:00Z",
+        "amount": 100,
+        "account_id": "account_id"
+      }
+    ]
+  }
+  ```
+
+#### Get Bill by ID
+- **GET** `/bills/:id`
+- **Headers**: `Authorization: Bearer <token>`
+- **Response**:
+  ```json
+  {
+    "bill": {
+      "id": "bill_id",
+      "biller_name": "Electric Company",
+      "due_date": "2024-03-15T00:00:00Z",
+      "amount": 100,
+      "account_id": "account_id"
+    }
+  }
+  ```
+
+#### Update Bill
+- **PUT** `/bills/:id`
+- **Headers**: `Authorization: Bearer <token>`
+- **Request Body**:
+  ```json
+  {
+    "biller_name": "Updated Electric Company",
+    "due_date": "2024-03-20T00:00:00Z",
+    "amount": 150
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "bill": {
+      "id": "bill_id",
+      "biller_name": "Updated Electric Company",
+      "due_date": "2024-03-20T00:00:00Z",
+      "amount": 150,
+      "account_id": "account_id"
+    }
+  }
+  ```
+
+#### Delete Bill
+- **DELETE** `/bills/:id`
+- **Headers**: `Authorization: Bearer <token>`
+- **Response**:
+  ```json
+  {
+    "status": "deleted"
+  }
+  ```
+
+### Budget Management
+
+#### Create Budget
+- **POST** `/budgets`
+- **Headers**: `Authorization: Bearer <token>`
+- **Request Body**:
+  ```json
+  {
+    "name": "Monthly Groceries",
+    "amount": 500,
+    "start_date": "2024-03-01T00:00:00Z",
+    "end_date": "2024-03-31T23:59:59Z"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "budget": {
+      "id": "budget_id",
+      "name": "Monthly Groceries",
+      "amount": 500,
+      "start_date": "2024-03-01T00:00:00Z",
+      "end_date": "2024-03-31T23:59:59Z"
+    }
+  }
+  ```
+
+#### Get Budgets
+- **GET** `/budgets`
+- **Headers**: `Authorization: Bearer <token>`
+- **Response**:
+  ```json
+  {
+    "budgets": [
+      {
+        "id": "budget_id",
+        "name": "Monthly Groceries",
+        "amount": 500,
+        "start_date": "2024-03-01T00:00:00Z",
+        "end_date": "2024-03-31T23:59:59Z"
+      }
+    ]
+  }
+  ```
+
+#### Get Budget by ID
+- **GET** `/budgets/:id`
+- **Headers**: `Authorization: Bearer <token>`
+- **Response**:
+  ```json
+  {
+    "budget": {
+      "id": "budget_id",
+      "name": "Monthly Groceries",
+      "amount": 500,
+      "start_date": "2024-03-01T00:00:00Z",
+      "end_date": "2024-03-31T23:59:59Z"
+    }
+  }
+  ```
+
+#### Update Budget
+- **PUT** `/budgets/:id`
+- **Headers**: `Authorization: Bearer <token>`
+- **Request Body**:
+  ```json
+  {
+    "name": "Updated Monthly Groceries"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "budget": {
+      "id": "budget_id",
+      "name": "Updated Monthly Groceries",
+      "amount": 500,
+      "start_date": "2024-03-01T00:00:00Z",
+      "end_date": "2024-03-31T23:59:59Z"
+    }
+  }
+  ```
+
+#### Delete Budget
+- **DELETE** `/budgets/:id`
+- **Headers**: `Authorization: Bearer <token>`
+- **Response**:
+  ```json
+  {
+    "result": "deleted"
+  }
+  ```
+
+### Transaction Categories
+
+#### Get Transaction Categories
+- **GET** `/transactions/categories`
+- **Headers**: `Authorization: Bearer <token>`
+- **Response**:
+  ```json
+  {
+    "categories": ["test"]
+  }
+  ```
+
 ## Error Handling
 
 The API uses standard HTTP status codes and returns error messages in JSON format:

@@ -14,6 +14,9 @@ For detailed documentation, please refer to:
 - User authentication and authorization with JWT
 - Account management (create, read, update, delete)
 - Transaction management (deposits, withdrawals, transfers)
+- Bill management (create, track, and manage bills)
+- Budget planning and tracking
+- Transaction categorization
 - SQL support through sqlalchemy ORM
 - Role-based access control
 - Automated test run on git push through [GitHub Actions](https://github.com/features/actions)
