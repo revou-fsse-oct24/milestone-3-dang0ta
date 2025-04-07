@@ -78,25 +78,26 @@ class Transaction(BaseModel):
     amount: int = Field(..., description="the nominal of the transfer, accepts only positive number if transfer_type is 'withdraw' or 'deposit'. Negative number on transaction_type transfer indicates transfer from account_id to recipient_account_id, positive number indicates otherwise")
     timestamp: datetime = Field(..., description="the timestamp of the transaction")
     recipient_id: Optional[str] = Field(None, description="only set if transaction_type is transfer, the account id of the transfer recipient")
+    category: str = Field(..., description="the category of the transaction")
 
     @field_serializer('timestamp')
     def serialize_timestamp(self, timestamp: datetime, _info):
         return timestamp.isoformat()
 
 
-
-class WithdrawRequest(BaseModel):
+class TransactionRequest(BaseModel):
     account_id: str = Field(..., description="The ID of the current user's account")
     amount: int = Field(..., description="the nominal of the transfer, accepts only positive number if transfer_type is 'withdraw' or 'deposit'. Negative number on transaction_type transfer indicates transfer from account_id to recipient_account_id, positive number indicates otherwise")
+    description: str | None = Field(None, description="description about the transaction")
+    category: str = Field("none", description="the category of the transaction")
+class WithdrawRequest(TransactionRequest):
+    pass
 
-class DepositRequest(BaseModel):
-    account_id: str = Field(..., description="The ID of the current user's account")
-    amount: int = Field(..., description="the nominal of the transfer, accepts only positive number if transfer_type is 'withdraw' or 'deposit'. Negative number on transaction_type transfer indicates transfer from account_id to recipient_account_id, positive number indicates otherwise")
+class DepositRequest(TransactionRequest):
+    pass
 
-class TransferRequest(BaseModel):
-    account_id: str = Field(..., description="The ID of the current user's account")
+class TransferRequest(TransactionRequest):
     recipient_account_id: str = Field(..., description="The ID of the recipient account")
-    amount: int = Field(..., description="the nominal of the transfer, accepts only positive number if transfer_type is 'withdraw' or 'deposit'. Negative number on transaction_type transfer indicates transfer from account_id to recipient_account_id, positive number indicates otherwise")
 
 class CreateBudgetRequest(BaseModel):
     name: str = Field(..., description="The name for the budget")

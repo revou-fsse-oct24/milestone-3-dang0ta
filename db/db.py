@@ -61,6 +61,7 @@ class Transactions(Base):
     entries: Mapped[List["TransactionEntries"]] = relationship(
         back_populates="transaction", cascade="all, delete-orphan"
     )
+    category: Mapped["TransactionCategories"] = relationship(back_populates="transaction")
     timestamp: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 class TransactionEntries(Base):
@@ -293,6 +294,14 @@ class Budgets(Base):
     amount: Mapped[int]
     start_date: Mapped[DateTime] = mapped_column(DateTime(timezone=True))
     end_date: Mapped[DateTime] = mapped_column(DateTime(timezone=True))
+
+class TransactionCategories(Base):
+    __tablename__ = "transaction_categories"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(30))
+    transaction_id: Mapped[int] = mapped_column(ForeignKey("transactions.id"))
+    transaction: Mapped[Transactions] = relationship(back_populates="category")
     
 
 if not db_conn:

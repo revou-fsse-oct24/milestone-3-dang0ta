@@ -4,13 +4,13 @@ from flask.testing import FlaskClient, FlaskCliRunner
 import pytest
 from app import create_app
 from models import UserCredential, Account, Transaction
-from db import Base, DB, db_session, Transactions as TransactionDB, TransactionEntries
+from db import Base, DB, db_session, Transactions as TransactionDB, TransactionEntries, TransactionCategories
 from typing import List, Generator
 from datetime import datetime,timezone, timedelta
 
 @pytest.fixture
 def deposit(client: Client, access_token: str, account_id: str) -> Transaction:
-    response = client.post("/transactions/deposit", headers={"Authorization": f"Bearer {access_token}"}, json={"amount": 102, "account_id": account_id})
+    response = client.post("/transactions/deposit", headers={"Authorization": f"Bearer {access_token}"}, json={"amount": 102, "account_id": account_id, "category": "test"})
     assert response.status_code == 200, f"failed to deposit, status code is {response.status_code} {response.get_data()}"
     response_json = response.get_json()
     assert "transaction" in response_json, f"invalid deposit response, no key 'transaction' found, {response_json}"
@@ -18,7 +18,7 @@ def deposit(client: Client, access_token: str, account_id: str) -> Transaction:
 
 @pytest.fixture
 def withdraw(client: Client, access_token: str, account_id) -> Transaction:
-    response = client.post("/transactions/withdraw", headers={"Authorization": f"Bearer {access_token}"}, json={"amount": 101, "account_id": account_id})
+    response = client.post("/transactions/withdraw", headers={"Authorization": f"Bearer {access_token}"}, json={"amount": 101, "account_id": account_id, "category": "test"})
     assert response.status_code == 200, f"failed to withdraw, status code is {response.status_code}"
     response_json = response.get_json()
     assert "transaction" in response_json, f"invalid withdraw response, no key 'transaction' found"
@@ -26,7 +26,7 @@ def withdraw(client: Client, access_token: str, account_id) -> Transaction:
 
 @pytest.fixture
 def transfer(client: Client, access_token: str, access_token_2: str, account_id: str, account_id_2: str) -> Transaction:
-    response = client.post("/transactions/transfer", headers={"Authorization": f"Bearer {access_token}"}, json={"amount": 103, "account_id": account_id, "recipient_account_id": account_id_2})
+    response = client.post("/transactions/transfer", headers={"Authorization": f"Bearer {access_token}"}, json={"amount": 103, "account_id": account_id, "recipient_account_id": account_id_2, "category": "test"})
     assert response.status_code == 200, f"failed to transfer, status code is {response.status_code}"
     response_json = response.get_json()
     assert "transaction" in response_json, f"invalid withdraw response, no key 'transaction' found"
@@ -76,7 +76,23 @@ def transactions(client: Client, access_token:str, account_id: str) -> List[Tran
         )
     ]
 
+    categories = [
+        TransactionCategories(
+            name="test",
+            transaction_id=transactions[0].id
+        ),
+        TransactionCategories(
+            name="test",
+            transaction_id=transactions[1].id
+        ),
+        TransactionCategories(
+            name="test",
+            transaction_id=transactions[2].id
+        )
+    ]
+
     db_session.add_all(transaction_entries)
+    db_session.add_all(categories)
     db_session.flush()
     db_session.commit()
 
@@ -85,6 +101,7 @@ def transactions(client: Client, access_token:str, account_id: str) -> List[Tran
         transaction_models.append(Transaction(
             id=str(transactions[i].id),
             account_id=str(account_id),
+            category="test",
             transaction_type=transactions[i].transaction_type,
             amount=transaction_entries[i].amount,
             timestamp=transactions[i].timestamp.isoformat(),
