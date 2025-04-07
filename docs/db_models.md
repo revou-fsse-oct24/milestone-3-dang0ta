@@ -48,6 +48,101 @@ The `TransactionEntries` model represents individual entries in the account ledg
 **Methods:**
 - `to_model()`: Converts the entry to a TransactionModel
 
+## Bill Models
+
+### Bills
+The `Bills` model represents bills that need to be paid by users.
+
+**Table Name:** `bills`
+
+**Fields:**
+- `id` (int): Primary key
+- `user_id` (str): Foreign key to User
+- `biller_name` (str): Name of the biller/payee
+- `due_date` (DateTime): When the bill is due
+- `amount` (int): Bill amount
+- `account_id` (str): Foreign key to Account
+
+**Relationships:**
+- Belongs to one `User` (many-to-one)
+- Belongs to one `Account` (many-to-one)
+
+**Methods:**
+- `to_model()`: Converts to Bill model
+
+### Bill Models (Pydantic)
+```python
+class Bill(BaseModel):
+    id: str                     # Unique bill identifier
+    biller_name: str            # Name of the biller/payee
+    due_date: str              # Due date in ISO format
+    amount: int                # Bill amount
+    account_id: str            # ID of the account to pay from
+
+class CreateBillRequest(BaseModel):
+    biller_name: str            # Name of the biller/payee
+    due_date: str              # Due date in ISO format
+    amount: int                # Bill amount
+    account_id: str            # ID of the account to pay from
+
+class UpdateBillRequest(BaseModel):
+    biller_name: str | None     # Updated biller name (optional)
+    due_date: str | None       # Updated due date (optional)
+    amount: int | None         # Updated amount (optional)
+
+class QueryBillsRequest(BaseModel):
+    account_id: str | None      # Filter by account ID
+    biller_name: str | None     # Filter by biller name (supports LIKE)
+    due_date_from: str | None   # Filter by due date range start
+    due_date_to: str | None     # Filter by due date range end
+    amount_min: int | None      # Filter by minimum amount
+    amount_max: int | None      # Filter by maximum amount
+```
+
+## Budget Models
+
+### Budgets
+The `Budgets` model represents budget plans created by users.
+
+**Table Name:** `budgets`
+
+**Fields:**
+- `id` (int): Primary key
+- `user_id` (str): Foreign key to User
+- `name` (str): Budget name/description
+- `amount` (int): Budget amount
+- `start_date` (DateTime): Budget period start date
+- `end_date` (DateTime): Budget period end date
+
+**Relationships:**
+- Belongs to one `User` (many-to-one)
+
+**Methods:**
+- `to_model()`: Converts to Budget model
+
+### Budget Models (Pydantic)
+```python
+class Budget(BaseModel):
+    id: str                     # Unique budget identifier
+    name: str                   # Budget name/description
+    amount: int                # Budget amount
+    start_date: str            # Start date in ISO format
+    end_date: str             # End date in ISO format
+    user: UserInformation      # User who owns the budget
+
+class CreateBudgetRequest(BaseModel):
+    name: str                   # Budget name/description
+    amount: int                # Budget amount
+    start_date: str            # Start date in ISO format
+    end_date: str             # End date in ISO format
+
+class UpdateBudgetRequest(BaseModel):
+    name: str | None            # Updated budget name (optional)
+    amount: int | None         # Updated amount (optional)
+    start_date: str | None     # Updated start date (optional)
+    end_date: str | None      # Updated end date (optional)
+```
+
 ## Account Model
 
 The `Account` model represents a banking account in the system.
