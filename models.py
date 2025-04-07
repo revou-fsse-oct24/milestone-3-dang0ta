@@ -118,3 +118,30 @@ class Budget(BaseModel):
     amount: int = Field(..., description="The limit of the budget")
     start_date: DateTime = Field(..., description="The budget's start date")
     end_date: DateTime = Field(..., description="The budget's end date")
+
+
+class CreateBillRequest(BaseModel):
+    account_id: str = Field(..., description="the id of the account where the bill is assigned to")
+    biller_name: str = Field(..., description="the name of the biller")
+    due_date: DateTime = Field(..., description="the due date of the bill")
+    amount: int = Field(..., description="payment amount")
+
+class QueryBillsRequest(BaseModel):
+    account_id: str | None = Field(None, description="filter the bills based on the account ID")
+    biller_name: str | None = Field(None, description="filter the bills based on the biller name")
+    due_date_from: DateTime | None = Field(None, description="set the start date for filtering the bills based on certain range of due date")
+    due_date_to: DateTime | None = Field(None, description="set the end date for filtering the bills based on certain range of due date")
+    amount_min: int | None = Field(None, description="set the min value for filtering the bills based on the range of the bill's payment amount")
+    amount_max: int | None = Field(None, description="set the max value for filtering the bills based on the range of the bill's payment amount")
+
+class UpdateBillRequest(BaseModel):
+    biller_name: str | None = Field(None, description="change the biller name")
+    due_date: DateTime | None = Field(None, description="change the due date")
+    amount: int | None = Field(None, description="change the amount")
+
+class Bill(BaseModel):
+    id: str = Field(..., description="unique identifier of the bill")
+    account_id: str = Field(..., description="the id of the account where the bill is assigned to")
+    biller_name: str = Field(..., description="the name of the biller")
+    due_date: DateTime = Field(..., description="the due date of the bill")
+    amount: int = Field(..., description="payment amount")
