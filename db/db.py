@@ -153,6 +153,7 @@ class Accounts(Base):
     # updated_at get updated on account change.
     created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    bills: Mapped[List["Bills"]] = relationship(back_populates="account", cascade="all, delete-orphan")
 
     def to_model(self) -> AccountModel:
         created_at, updated_at = self.created_at.isoformat(), self.updated_at.isoformat()
@@ -205,9 +206,7 @@ class Users(Base):
     default_account: Mapped["Accounts"] = relationship(foreign_keys=[default_account_id])
 
     accounts: Mapped[list["Accounts"]] = relationship(back_populates="user", foreign_keys='Accounts.user_id')
-    credential: Mapped["Credentials"] = relationship(
-        back_populates="user", cascade="all, delete-orphan"
-    )
+    credential: Mapped["Credentials"] = relationship(back_populates="user")
 
     budgets: Mapped[List["Budgets"]] = relationship(back_populates="user")
 
@@ -215,6 +214,8 @@ class Users(Base):
     roles: Mapped[str] = mapped_column(String(30), default="customer")
     created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    bills: Mapped[List["Bills"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"User(id={self.id!r}, name={self.username!r}, fullname={self.fullname!r})"
@@ -303,6 +304,17 @@ class TransactionCategories(Base):
     transaction_id: Mapped[int] = mapped_column(ForeignKey("transactions.id"))
     transaction: Mapped[Transactions] = relationship(back_populates="category")
     
+class Bills(Base):
+    __tablename__ = "bills"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user: Mapped[Users] = relationship(back_populates="bills")
+    biller_name: Mapped[str] = mapped_column(String(30))
+    due_date: Mapped[DateTime]
+    amount: Mapped[int]
+    account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id"))
+    account: Mapped[Accounts] = relationship(back_populates="bills")
 
 if not db_conn:
     raise ConfigurationError("DB_CONN is not set")
