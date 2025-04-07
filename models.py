@@ -121,7 +121,7 @@ class Budget(BaseModel):
 
 
 class CreateBillRequest(BaseModel):
-    account_id: str = Field(..., description="the id of the account where the bill is assigned to")
+    account_id: str | None = Field(None, description="the id of the account where the bill is assigned to")
     biller_name: str = Field(..., description="the name of the biller")
     due_date: DateTime = Field(..., description="the due date of the bill")
     amount: int = Field(..., description="payment amount")
