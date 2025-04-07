@@ -2,319 +2,674 @@
 	"info": {
 		"_postman_id": "80386449-7cad-4232-8025-ea20f926b97b",
 		"name": "RevoBank",
-		"description": "# 🚀 Get started here\n\nThis template guides you through CRUD operations (GET, POST, PUT, DELETE), variables, and tests.\n\n## 🔖 **How to use this template**\n\n#### **Step 1: Send requests**\n\nRESTful APIs allow you to perform CRUD operations using the POST, GET, PUT, and DELETE HTTP methods.\n\nThis collection contains each of these [request](https://learning.postman.com/docs/sending-requests/requests/) types. Open each request and click \"Send\" to see what happens.\n\n#### **Step 2: View responses**\n\nObserve the response tab for status code (200 OK), response time, and size.\n\n#### **Step 3: Send new Body data**\n\nUpdate or add new data in \"Body\" in the POST request. Typically, Body data is also used in PUT request.\n\n```\n{\n    \"name\": \"Add your name in the body\"\n}\n\n ```\n\n#### **Step 4: Update the variable**\n\nVariables enable you to store and reuse values in Postman. We have created a [variable](https://learning.postman.com/docs/sending-requests/variables/) called `base_url` with the sample request [https://postman-api-learner.glitch.me](https://postman-api-learner.glitch.me). Replace it with your API endpoint to customize this collection.\n\n#### **Step 5: Add tests in the \"Scripts\" tab**\n\nAdding tests to your requests can help you confirm that your API is working as expected. You can write test scripts in JavaScript and view the output in the \"Test Results\" tab.\n\n<img src=\"https://content.pstmn.io/fa30ea0a-373d-4545-a668-e7b283cca343/aW1hZ2UucG5n\" alt=\"\" height=\"1530\" width=\"2162\">\n\n## 💪 Pro tips\n\n- Use folders to group related requests and organize the collection.\n    \n- Add more [scripts](https://learning.postman.com/docs/writing-scripts/intro-to-scripts/) to verify if the API works as expected and execute workflows.\n    \n\n## 💡Related templates\n\n[API testing basics](https://go.postman.co/redirect/workspace?type=personal&collectionTemplateId=e9a37a28-055b-49cd-8c7e-97494a21eb54&sourceTemplateId=ddb19591-3097-41cf-82af-c84273e56719)  \n[API documentation](https://go.postman.co/redirect/workspace?type=personal&collectionTemplateId=e9c28f47-1253-44af-a2f3-20dce4da1f18&sourceTemplateId=ddb19591-3097-41cf-82af-c84273e56719)  \n[Authorization methods](https://go.postman.co/redirect/workspace?type=personal&collectionTemplateId=31a9a6ed-4cdf-4ced-984c-d12c9aec1c27&sourceTemplateId=ddb19591-3097-41cf-82af-c84273e56719)",
+		"description": "RevoBank API Collection for testing all endpoints including authentication, user management, accounts, transactions, bills, and budgets.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "5261800"
 	},
 	"item": [
 		{
-			"name": "get current user",
-			"event": [
+			"name": "Authentication",
+			"item": [
 				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer {{bearerToken}}",
-						"type": "text"
-					}
-				],
-				"url": {
-					"raw": "{{base_url}}/users/me",
-					"host": [
-						"{{base_url}}"
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Successful login\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200]);",
+									"});",
+									"",
+									"if (pm.response.status == \"OK\") {",
+									"    var res = pm.response.json()",
+									"    pm.environment.set(\"bearerToken\", res.access_token)",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
 					],
-					"path": [
-						"users",
-						"me"
-					]
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"email\": \"foo@bar.com\",\n    \"password\": \"foobarqux\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
 				},
-				"description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
-			},
-			"response": []
-		},
-		{
-			"name": "create a new user",
-			"event": [
 				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Successful POST request\", function () {",
-							"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
-							"});",
-							"",
-							"if (pm.response.status == \"OK\") {",
-							"    pm.environment.set(\"userID\", pm.response.text())",
-							"}"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n\t\"email\": \"foo@bar.com\",\n    \"name\": \"foo\",\n    \"password\": \"foobarqux\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
+					"name": "Refresh Token",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refresh_token\": \"your_refresh_token\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/refresh",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "refresh"]
 						}
 					}
 				},
-				"url": {
-					"raw": "{{base_url}}/users",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"users"
-					]
-				},
-				"description": "This is a POST request, submitting data to an API via the request body. This request submits JSON data, and the data is reflected in the response.\n\nA successful POST request typically returns a `200 OK` or `201 Created` response code."
-			},
-			"response": []
-		},
-		{
-			"name": "login",
-			"event": [
 				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Successful PUT request\", function () {",
-							"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
-							"});",
-							"",
-							"if (pm.response.status == \"OK\") {",
-							"    var res = pm.response.json()",
-							"    pm.environment.set(\"bearerToken\", res.access_token)",
-							"}"
+					"name": "Logout",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
 						],
-						"type": "text/javascript",
-						"packages": {}
+						"url": {
+							"raw": "{{base_url}}/auth/logout",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "logout"]
+						}
 					}
 				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n\t\"email\": \"foo@bar.com\",\n    \"password\": \"foobarqux\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
+			]
+		},
+		{
+			"name": "User Management",
+			"item": [
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"email\": \"foo@bar.com\",\n    \"name\": \"foo\",\n    \"password\": \"foobarqux\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/users",
+							"host": ["{{base_url}}"],
+							"path": ["users"]
 						}
 					}
 				},
-				"url": {
-					"raw": "{{base_url}}/auth/login",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"auth",
-						"login"
-					]
-				},
-				"description": "This is a PUT request and it is used to overwrite an existing piece of data. For instance, after you create an entity with a POST request, you may want to modify that later. You can do that using a PUT request. You typically identify the entity being updated by including an identifier in the URL (eg. `id=1`).\n\nA successful PUT request typically returns a `200 OK`, `201 Created`, or `204 No Content` response code."
-			},
-			"response": []
-		},
-		{
-			"name": "update current user",
-			"request": {
-				"method": "PUT",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer {{bearerToken}}",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"email\": \"foo@bar.com\",\n    \"name\": \"updated me\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
+				{
+					"name": "Get Current User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/users/me",
+							"host": ["{{base_url}}"],
+							"path": ["users", "me"]
 						}
 					}
 				},
-				"url": {
-					"raw": "{{base_url}}/users/me",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"users",
-						"me"
-					]
+				{
+					"name": "Update Current User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"foo@bar.com\",\n    \"name\": \"updated me\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/users/me",
+							"host": ["{{base_url}}"],
+							"path": ["users", "me"]
+						}
+					}
 				}
-			},
-			"response": []
+			]
 		},
 		{
-			"name": "get account list",
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer {{bearerToken}}",
-						"type": "text"
-					}
-				],
-				"url": {
-					"raw": "{{base_url}}/accounts",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"accounts"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "create new account",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer {{bearerToken}}",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"user_id\": \"d5693d78-c28b-44a7-a7ff-a95eaa5c65cd\",\n    \"balance\": 100\n}",
-					"options": {
-						"raw": {
-							"language": "json"
+			"name": "Account Management",
+			"item": [
+				{
+					"name": "Get Accounts",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/accounts",
+							"host": ["{{base_url}}"],
+							"path": ["accounts"]
 						}
 					}
 				},
-				"url": {
-					"raw": "{{base_url}}/accounts",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"accounts"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "get an account",
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer {{bearerToken}}",
-						"type": "text"
-					}
-				],
-				"url": {
-					"raw": "{{base_url}}/accounts/22776184-4d35-4496-9f9a-4bb353737075",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"accounts",
-						"22776184-4d35-4496-9f9a-4bb353737075"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "update an account",
-			"request": {
-				"method": "PUT",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer {{bearerToken}}",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"user_id\": \"d5693d78-c28b-44a7-a7ff-a95eaa5c65cd\",\n    \"balance\": 200\n}",
-					"options": {
-						"raw": {
-							"language": "json"
+				{
+					"name": "Create Account",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"balance\": 100\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/accounts",
+							"host": ["{{base_url}}"],
+							"path": ["accounts"]
 						}
 					}
 				},
-				"url": {
-					"raw": "{{base_url}}/accounts/22776184-4d35-4496-9f9a-4bb353737075",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"accounts",
-						"22776184-4d35-4496-9f9a-4bb353737075"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "delete an account",
-			"request": {
-				"method": "PUT",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer {{bearerToken}}",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"user_id\": \"d5693d78-c28b-44a7-a7ff-a95eaa5c65cd\",\n    \"balance\": 200\n}",
-					"options": {
-						"raw": {
-							"language": "json"
+				{
+					"name": "Get Account",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/accounts/{{account_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["accounts", "{{account_id}}"]
 						}
 					}
 				},
-				"url": {
-					"raw": "{{base_url}}/accounts/22776184-4d35-4496-9f9a-4bb353737075",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"accounts",
-						"22776184-4d35-4496-9f9a-4bb353737075"
-					]
+				{
+					"name": "Update Account",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"balance\": 200\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/accounts/{{account_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["accounts", "{{account_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Delete Account",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/accounts/{{account_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["accounts", "{{account_id}}"]
+						}
+					}
 				}
-			},
-			"response": []
+			]
+		},
+		{
+			"name": "Transaction Management",
+			"item": [
+				{
+					"name": "Get Transaction Categories",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/transactions/categories",
+							"host": ["{{base_url}}"],
+							"path": ["transactions", "categories"]
+						}
+					}
+				},
+				{
+					"name": "Get Transactions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/transactions",
+							"host": ["{{base_url}}"],
+							"path": ["transactions"],
+							"query": [
+								{
+									"key": "transaction_type",
+									"value": "deposit,withdraw,transfer",
+									"disabled": true
+								},
+								{
+									"key": "account_id",
+									"value": "{{account_id}}",
+									"disabled": true
+								},
+								{
+									"key": "range_from",
+									"value": "2024-03-01T00:00:00Z",
+									"disabled": true
+								},
+								{
+									"key": "range_to",
+									"value": "2024-03-31T23:59:59Z",
+									"disabled": true
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Transaction",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/transactions/{{transaction_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["transactions", "{{transaction_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Create Withdrawal",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"account_id\": \"{{account_id}}\",\n    \"amount\": 100\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/transactions/withdraw",
+							"host": ["{{base_url}}"],
+							"path": ["transactions", "withdraw"]
+						}
+					}
+				},
+				{
+					"name": "Create Deposit",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"account_id\": \"{{account_id}}\",\n    \"amount\": 100\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/transactions/deposit",
+							"host": ["{{base_url}}"],
+							"path": ["transactions", "deposit"]
+						}
+					}
+				},
+				{
+					"name": "Create Transfer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"account_id\": \"{{account_id}}\",\n    \"recipient_account_id\": \"{{recipient_account_id}}\",\n    \"amount\": 100\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/transactions/transfer",
+							"host": ["{{base_url}}"],
+							"path": ["transactions", "transfer"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Bill Management",
+			"item": [
+				{
+					"name": "Get Bills",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"account_id\": \"{{account_id}}\",\n    \"biller_name\": \"Electric%\",\n    \"due_date_from\": \"2024-03-01T00:00:00Z\",\n    \"due_date_to\": \"2024-03-31T23:59:59Z\",\n    \"amount_min\": 50,\n    \"amount_max\": 200\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/bills",
+							"host": ["{{base_url}}"],
+							"path": ["bills"]
+						}
+					}
+				},
+				{
+					"name": "Create Bill",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"biller_name\": \"Electric Company\",\n    \"due_date\": \"2024-03-15T00:00:00Z\",\n    \"amount\": 100,\n    \"account_id\": \"{{account_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/bills",
+							"host": ["{{base_url}}"],
+							"path": ["bills"]
+						}
+					}
+				},
+				{
+					"name": "Get Bill",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/bills/{{bill_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["bills", "{{bill_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Update Bill",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"biller_name\": \"Updated Electric Company\",\n    \"due_date\": \"2024-03-20T00:00:00Z\",\n    \"amount\": 150\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/bills/{{bill_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["bills", "{{bill_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Delete Bill",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/bills/{{bill_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["bills", "{{bill_id}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Budget Management",
+			"item": [
+				{
+					"name": "Get Budgets",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/budgets",
+							"host": ["{{base_url}}"],
+							"path": ["budgets"]
+						}
+					}
+				},
+				{
+					"name": "Create Budget",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Monthly Groceries\",\n    \"amount\": 500,\n    \"start_date\": \"2024-03-01T00:00:00Z\",\n    \"end_date\": \"2024-03-31T23:59:59Z\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/budgets",
+							"host": ["{{base_url}}"],
+							"path": ["budgets"]
+						}
+					}
+				},
+				{
+					"name": "Get Budget",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/budgets/{{budget_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["budgets", "{{budget_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Update Budget",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Updated Monthly Groceries\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/budgets/{{budget_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["budgets", "{{budget_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Delete Budget",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{bearerToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/budgets/{{budget_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["budgets", "{{budget_id}}"]
+						}
+					}
+				}
+			]
 		}
 	],
 	"event": [
@@ -322,29 +677,41 @@
 			"listen": "prerequest",
 			"script": {
 				"type": "text/javascript",
-				"exec": [
-					""
-				]
+				"exec": [""]
 			}
 		},
 		{
 			"listen": "test",
 			"script": {
 				"type": "text/javascript",
-				"exec": [
-					""
-				]
+				"exec": [""]
 			}
 		}
 	],
 	"variable": [
 		{
-			"key": "id",
-			"value": "1"
-		},
-		{
 			"key": "base_url",
 			"value": "http://localhost:5000"
+		},
+		{
+			"key": "account_id",
+			"value": "your_account_id"
+		},
+		{
+			"key": "recipient_account_id",
+			"value": "recipient_account_id"
+		},
+		{
+			"key": "bill_id",
+			"value": "your_bill_id"
+		},
+		{
+			"key": "budget_id",
+			"value": "your_budget_id"
+		},
+		{
+			"key": "transaction_id",
+			"value": "your_transaction_id"
 		}
 	]
 }
