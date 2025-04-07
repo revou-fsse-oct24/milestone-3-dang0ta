@@ -311,7 +311,7 @@ class Bills(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     user: Mapped[Users] = relationship(back_populates="bills")
     biller_name: Mapped[str] = mapped_column(String(30))
-    due_date: Mapped[DateTime]
+    due_date: Mapped[DateTime] = mapped_column(DateTime(timezone=True))
     amount: Mapped[int]
     account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id"))
     account: Mapped[Accounts] = relationship(back_populates="bills")
