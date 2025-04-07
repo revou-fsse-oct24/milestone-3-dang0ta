@@ -1,6 +1,6 @@
 from typing import Optional, List
-from db import db_session, Accounts, Transactions, TransactionEntries
-from models import Transaction as TransactionModel, TransactionTypes
+from db import db_session, Accounts, Transactions, TransactionEntries, TransactionCategories
+from models import Transaction as TransactionModel, TransactionTypes, DepositRequest, WithdrawRequest, TransferRequest
 from .accounts import AccountNotFoundException
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload 
@@ -13,15 +13,15 @@ class TransactionNotFoundException(Exception):
         self.transaction_id = transaction_id
 
 
-def withdraw(account_id:str, amount:int, description:str | None = None) -> Optional[TransactionModel]:
-    account = db_session.get(Accounts, account_id)
+def withdraw(request=WithdrawRequest) -> Optional[TransactionModel]:
+    account = db_session.get(Accounts, request.account_id)
     if account is None:
-        raise AccountNotFoundException(account_id=account_id)
+        raise AccountNotFoundException(account_id=request.account_id)
     
-    account.balance = account.balance - amount
+    account.balance = account.balance - request.amount
     transaction = Transactions(
         transaction_type="withdraw",
-        description=description,
+        description=request.description,
     )
 
     db_session.add(transaction)
@@ -31,28 +31,35 @@ def withdraw(account_id:str, amount:int, description:str | None = None) -> Optio
         transaction_id = transaction.id,
         account_id = account.id,
         entry_type = "debit",
-        amount = amount
+        amount = request.amount
+    )
+    
+    category = TransactionCategories(
+        name=request.category,
+        transaction_id=transaction.id
     )
 
-    db_session.add(entry)
+    db_session.add_all([entry, category])
+    db_session.flush()
     db_session.commit()
     return TransactionModel(
         id=str(transaction.id),
         account_id=str(account.id),
         transaction_type=transaction.transaction_type,
-        amount=amount,
+        amount=request.amount,
         timestamp=transaction.timestamp.isoformat(),
+        category=category.name,
     )
 
-def deposit(account_id:str, amount:int, description: str | None = None) -> Optional[TransactionModel]:    
-    account = db_session.get(Accounts, account_id)
+def deposit(request: DepositRequest) -> Optional[TransactionModel]:    
+    account = db_session.get(Accounts, request.account_id)
     if account is None:
-        raise AccountNotFoundException(account_id=account_id)
+        raise AccountNotFoundException(account_id=request.account_id)
     
-    account.balance = account.balance + amount
+    account.balance = account.balance + request.amount
     transaction = Transactions(
         transaction_type="deposit",
-        description=description,
+        description=request.description,
     )
 
     db_session.add(transaction)
@@ -62,34 +69,40 @@ def deposit(account_id:str, amount:int, description: str | None = None) -> Optio
         transaction_id = transaction.id,
         account_id = account.id,
         entry_type = "credit",
-        amount=amount
+        amount=request.amount
+    )
+
+    category=TransactionCategories(
+        name=request.category,
+        transaction_id=transaction.id
     )
     
-    db_session.add(entry)
+    db_session.add_all([entry, category])
     db_session.commit()
     return TransactionModel(
         id=str(transaction.id),
         account_id=str(account.id),
         transaction_type=transaction.transaction_type,
-        amount=amount,
+        amount=request.amount,
         timestamp=transaction.timestamp.isoformat(),
+        category=category.name,
     )
 
-def transfer(sender_account_id: str, recipient_account_id: str, amount: int, description:str | None = None) -> Optional[TransactionModel]:
-    sender_account = db_session.get(Accounts, sender_account_id)
+def transfer(request: TransferRequest) -> Optional[TransactionModel]:
+    sender_account = db_session.get(Accounts, request.account_id)
     if sender_account is None:
-        raise AccountNotFoundException(account_id=sender_account_id)
+        raise AccountNotFoundException(account_id=request.account_id)
     
-    recipient_account = db_session.get(Accounts, recipient_account_id)
+    recipient_account = db_session.get(Accounts, request.recipient_account_id)
     if recipient_account is None:
-        raise AccountNotFoundException(account_id=recipient_account_id)
+        raise AccountNotFoundException(account_id=request.recipient_account_id)
 
-    sender_account.balance = sender_account.balance - amount
-    recipient_account.balance = recipient_account.balance + amount
+    sender_account.balance = sender_account.balance - request.amount
+    recipient_account.balance = recipient_account.balance + request.amount
 
     transaction = Transactions(
         transaction_type="transfer", 
-        description=description,
+        description=request.description,
     )
 
     db_session.add(transaction)
@@ -99,29 +112,32 @@ def transfer(sender_account_id: str, recipient_account_id: str, amount: int, des
         transaction_id = transaction.id,
         account_id = sender_account.id,
         entry_type = "debit",
-        amount = amount
+        amount = request.amount
     )
 
     recipient_entry = TransactionEntries(
         transaction_id = transaction.id,
         account_id = recipient_account.id,
         entry_type = "credit",
-        amount = amount
+        amount = request.amount
     )
 
-    db_session.add(sender_entry)
-    db_session.add(recipient_entry)
+    category = TransactionCategories(
+        name=request.category,
+        transaction_id=transaction.id,
+    )
+
+    db_session.add_all([sender_entry, recipient_entry, category])
     db_session.commit()
     return TransactionModel(
         id=str(transaction.id),
-        account_id=str(sender_account_id),
+        account_id=str(sender_account.id),
         transaction_type=transaction.transaction_type,
         amount=sender_entry.amount,
         timestamp=transaction.timestamp.isoformat(),
-        recipient_id=str(recipient_entry.account_id)
+        recipient_id=str(recipient_entry.account_id),
+        category=category.name
     )
-    
-
 class TransactionQuery(BaseModel):
     account_id: Optional[str] = None
     range_from: Optional[datetime]  = None
@@ -138,6 +154,7 @@ def get_transactions(query: TransactionQuery, current_user: str) -> List[Transac
         .join(Transactions)
         .where(Accounts.user_id.is_(current_user))
         .options(joinedload(Transactions.entries))
+        .options(joinedload(Transactions.category))
     )
     
     if query.account_id is not None:
@@ -159,7 +176,7 @@ def get_transactions(query: TransactionQuery, current_user: str) -> List[Transac
     return transactions
     
 def get_transaction(transaction_id:str) -> Optional[TransactionModel]:
-    transaction = db_session.get(Transactions, transaction_id, options=[joinedload(Transactions.entries)])
+    transaction = db_session.get(Transactions, transaction_id, options=[joinedload(Transactions.entries), joinedload(Transactions.category)])
 
     if transaction is None:
         raise TransactionNotFoundException(transaction_id=transaction_id)
@@ -183,7 +200,8 @@ def parse_transaction_model(transaction: Transactions)-> Optional[TransactionMod
             account_id=str(entry.account_id),
             transaction_type=transaction.transaction_type,
             amount=entry.amount,
-            timestamp=transaction.timestamp.isoformat(),                    
+            timestamp=transaction.timestamp.isoformat(),
+            category=transaction.category.name                   
         )
     
     if len(transaction.entries) < 2:
@@ -200,5 +218,6 @@ def parse_transaction_model(transaction: Transactions)-> Optional[TransactionMod
         transaction_type=transaction.transaction_type,
         amount=sender.amount,
         timestamp=transaction.timestamp.isoformat(), 
-        recipient_id=str(recipient.account_id)
+        recipient_id=str(recipient.account_id),
+        category=transaction.category.name
     )

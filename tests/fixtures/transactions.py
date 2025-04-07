@@ -4,7 +4,7 @@ from flask.testing import FlaskClient, FlaskCliRunner
 import pytest
 from app import create_app
 from models import UserCredential, Account, Transaction
-from db import Base, DB, db_session, Transactions as TransactionDB, TransactionEntries
+from db import Base, DB, db_session, Transactions as TransactionDB, TransactionEntries, TransactionCategories
 from typing import List, Generator
 from datetime import datetime,timezone, timedelta
 
@@ -76,7 +76,23 @@ def transactions(client: Client, access_token:str, account_id: str) -> List[Tran
         )
     ]
 
+    categories = [
+        TransactionCategories(
+            name="test",
+            transaction_id=transactions[0].id
+        ),
+        TransactionCategories(
+            name="test",
+            transaction_id=transactions[1].id
+        ),
+        TransactionCategories(
+            name="test",
+            transaction_id=transactions[2].id
+        )
+    ]
+
     db_session.add_all(transaction_entries)
+    db_session.add_all(categories)
     db_session.flush()
     db_session.commit()
 
@@ -85,6 +101,7 @@ def transactions(client: Client, access_token:str, account_id: str) -> List[Tran
         transaction_models.append(Transaction(
             id=str(transactions[i].id),
             account_id=str(account_id),
+            category="test",
             transaction_type=transactions[i].transaction_type,
             amount=transaction_entries[i].amount,
             timestamp=transactions[i].timestamp.isoformat(),

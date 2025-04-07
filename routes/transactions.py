@@ -19,7 +19,7 @@ def transaction_bp() -> Blueprint:
             if withdraw_request.account_id is not None:
                 if not is_account_belong_to_current_user(withdraw_request.account_id):
                     return jsonify({"error": "Forbidden"}), 401
-            transaction = withdraw(withdraw_request.account_id, withdraw_request.amount)
+            transaction = withdraw(request=withdraw_request)
             return jsonify({"transaction": transaction.model_dump()}), 200
         except ValidationError as e:
             return parseValidationError(e, 400)
@@ -34,7 +34,7 @@ def transaction_bp() -> Blueprint:
             if deposit_request.account_id is not None:
                 if not is_account_belong_to_current_user(deposit_request.account_id):
                     return jsonify({"error": "Forbidden"}), 401
-            transaction = deposit(deposit_request.account_id, deposit_request.amount)
+            transaction = deposit(request=deposit_request)
             return jsonify({"transaction": transaction.model_dump()}), 200
         except ValidationError as e:
             return parseValidationError(e, 400)
@@ -49,7 +49,7 @@ def transaction_bp() -> Blueprint:
             if transfer_request.account_id is not None:
                 if not is_account_belong_to_current_user(transfer_request.account_id):
                     return jsonify({"error": "Forbidden"}), 401
-            transaction = transfer(transfer_request.account_id, transfer_request.recipient_account_id, transfer_request.amount)
+            transaction = transfer(request=transfer_request)
             return jsonify({"transaction": transaction.model_dump()}), 200
         except ValidationError as e:
             return parseValidationError(e, 400)
