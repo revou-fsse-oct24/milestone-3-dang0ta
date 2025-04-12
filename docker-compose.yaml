@@ -8,10 +8,24 @@ services:
       - pgdata:/var/lib/postgresql/data
 
   adminer:
-    # DBMS 
     image: adminer
     restart: always
     ports:
       - 8080:8080
+
+  api:
+    image: api:dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+    ports:
+      - 5001:5000
+    environment:
+      - DB_CONN=postgresql://postgres:changeme@db:5432/postgres
+      - JWT_SECRET=changeme
+
+      
 volumes:
   pgdata:
