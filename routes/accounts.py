@@ -75,7 +75,7 @@ def get_account(id: str):
         return jsonify({"error": "Account not found"}), 404
 
 
-@role_required("admin") # updating a specific account can only be done by admins
+# @role_required("admin") # updating a specific account can only be done by admins
 def update_account(id: str):
     try:
         current_user = get_jwt_identity()
