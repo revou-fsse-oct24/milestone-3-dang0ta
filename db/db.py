@@ -142,7 +142,7 @@ class Accounts(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     user: Mapped["Users"] = relationship(back_populates="accounts", foreign_keys=[user_id])
     account_type: Mapped[str] = mapped_column(String(30), default="saving")
-    account_number: Mapped[str] = mapped_column(String(30), default=lambda: str(uuid.uuid4()))
+    account_number: Mapped[str] = mapped_column(String(128), default=lambda: str(uuid.uuid4()))
 
     balance: Mapped[int]
     transaction_entries: Mapped[List["TransactionEntries"]] =  relationship(
