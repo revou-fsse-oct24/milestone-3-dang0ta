@@ -1,7 +1,8 @@
 from flask import Flask, jsonify
+from flask_migrate import Migrate
 from werkzeug import exceptions
 from routes import register_bp
-from db import init_db, db_session, db_session
+from db import init_db, db_session, DB
 
 def create_app():
     """Create and configure the Flask application"""
@@ -9,6 +10,7 @@ def create_app():
         app = Flask(__name__)
         init_db()
         register_bp(app)
+        migrate = Migrate(app=app, db=DB)
 
         @app.route("/")
         def ping():
