@@ -21,6 +21,7 @@ For detailed documentation, please refer to:
 - Role-based access control
 - Automated test run on git push through [GitHub Actions](https://github.com/features/actions)
 - Unit testing with coverage report
+- Docker compose file for deploying a complete system with PostgreSQL and Adminer DBMS
 
 ## Installation
 
