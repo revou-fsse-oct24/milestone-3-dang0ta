@@ -57,7 +57,7 @@ def get_bills():
     try:
         # TODO: perform RBAC here
         current_user = get_jwt_identity()
-        if request.content_length > 0:
+        if request is None or request.content_length is None or request.content_length > 0:
             req = QueryBillsRequest(**request.get_json())
         else:
             req = QueryBillsRequest()
